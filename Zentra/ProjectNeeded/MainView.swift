@@ -1,6 +1,4 @@
 import SwiftUI
-// Add this if missing:
-// import RotatingIcon
 
 struct NebulaBackground: View {
     @State private var animate = false
@@ -8,43 +6,54 @@ struct NebulaBackground: View {
     let particleCount = 22
     
     var body: some View {
-        GeometryReader { geo in
-            Canvas { context, size in
-                for i in 0..<particleCount {
-                    let iDouble = Double(i)
-                    let particlesDouble = Double(particleCount)
-                    let angle = (iDouble / particlesDouble) * 2 * .pi
-                    let baseRadius = min(size.width, size.height) * 0.38
-                    let t = animate ? 1.0 : 0.0
-                    let w = iDouble * 0.28 + t * 2.1
-                    let sinW = sin(w)
-                    let sinWPlusT = sin(w + t)
-                    let cosW = cos(w)
-                    let cosWPlusT = cos(w + t)
-                    let centerX = size.width / 2
-                    let centerY = size.height / 2
-                    let radiusX = baseRadius + CGFloat(sinWPlusT * 18)
-                    let radiusY = baseRadius + CGFloat(cosW * 14)
-                    let x = centerX + cos(angle + t + w) * radiusX
-                    let y = centerY + sin(angle + t + w) * radiusY
-                    let hue = ((iDouble / particlesDouble) + t * 0.21).truncatingRemainder(dividingBy: 1.0)
-                    let saturation = 0.50 + 0.5 * abs(sinW)
-                    let brightness = 1.0
-                    let opacity = 0.41 + 0.36 * abs(cosWPlusT)
-                    let color = Color(hue: hue, saturation: saturation, brightness: brightness, opacity: opacity)
-                    let blend = Gradient(colors: [themeEngine.colors.accent.opacity(0.63), color.opacity(0.47), themeEngine.colors.background.opacity(0.19)])
-                    let width = 54 + CGFloat(sinWPlusT * 8)
-                    let height = 54 + CGFloat(cosWPlusT * 12)
-                    let ellipseRect = CGRect(x: x, y: y, width: width, height: height)
-                    let path = Path(ellipseIn: ellipseRect)
-                    let startPoint = CGPoint(x: x, y: y)
-                    let endPoint = CGPoint(x: x + 25, y: y + 25)
-                    context.fill(path, with: .linearGradient(blend, startPoint: startPoint, endPoint: endPoint))
+        ZStack {
+            // Animated gradient background
+            AnimatedGradientBackground(
+                colors: [
+                    Color(hex: themeEngine.colors.background.hexString ?? "0A0E27"),
+                    themeEngine.colors.accent.opacity(0.3),
+                    Color(hex: themeEngine.colors.background.hexString ?? "0A0E27")
+                ]
+            )
+            
+            GeometryReader { geo in
+                Canvas { context, size in
+                    for i in 0..<particleCount {
+                        let iDouble = Double(i)
+                        let particlesDouble = Double(particleCount)
+                        let angle = (iDouble / particlesDouble) * 2 * .pi
+                        let baseRadius = min(size.width, size.height) * 0.38
+                        let t = animate ? 1.0 : 0.0
+                        let w = iDouble * 0.28 + t * 2.1
+                        let sinW = sin(w)
+                        let sinWPlusT = sin(w + t)
+                        let cosW = cos(w)
+                        let cosWPlusT = cos(w + t)
+                        let centerX = size.width / 2
+                        let centerY = size.height / 2
+                        let radiusX = baseRadius + CGFloat(sinWPlusT * 18)
+                        let radiusY = baseRadius + CGFloat(cosW * 14)
+                        let x = centerX + cos(angle + t + w) * radiusX
+                        let y = centerY + sin(angle + t + w) * radiusY
+                        let hue = ((iDouble / particlesDouble) + t * 0.21).truncatingRemainder(dividingBy: 1.0)
+                        let saturation = 0.50 + 0.5 * abs(sinW)
+                        let brightness = 1.0
+                        let opacity = 0.25 + 0.25 * abs(cosWPlusT)
+                        let color = Color(hue: hue, saturation: saturation, brightness: brightness, opacity: opacity)
+                        let blend = Gradient(colors: [themeEngine.colors.accent.opacity(0.5), color.opacity(0.35), themeEngine.colors.background.opacity(0.15)])
+                        let width = 54 + CGFloat(sinWPlusT * 8)
+                        let height = 54 + CGFloat(cosWPlusT * 12)
+                        let ellipseRect = CGRect(x: x, y: y, width: width, height: height)
+                        let path = Path(ellipseIn: ellipseRect)
+                        let startPoint = CGPoint(x: x, y: y)
+                        let endPoint = CGPoint(x: x + 25, y: y + 25)
+                        context.fill(path, with: .linearGradient(blend, startPoint: startPoint, endPoint: endPoint))
+                    }
                 }
+                .blur(radius: 60)
+                .animation(.easeInOut(duration: 7.0).repeatForever(autoreverses: true), value: animate)
+                .onAppear { animate = true }
             }
-            .blur(radius: 44)
-            .animation(.easeInOut(duration: 7.0).repeatForever(autoreverses: true), value: animate)
-            .onAppear { animate = true }
         }
         .ignoresSafeArea()
     }
@@ -96,7 +105,7 @@ struct MainView: View {
                     ZStack {
                         Text(
                             selectedPage == "bazaar" ? "Bazaar Tracker" :
-                            (selectedPage == "bazaarProfit" ? "Bazaar Profit\nCalculator" : "Startseite")
+                            (selectedPage == "bazaarProfit" ? "Bazaar Profit\nCalculator" : "Home")
                         )
                         .font(.system(size: 32, weight: .bold))
                         .multilineTextAlignment(.center)
@@ -115,6 +124,11 @@ struct MainView: View {
                                     .font(.title)
                                     .foregroundColor(themeEngine.colors.text)
                                     .padding()
+                                    .background(
+                                        Circle()
+                                            .fill(.ultraThinMaterial)
+                                            .opacity(0.3)
+                                    )
                             }
                             Spacer()
                         }
@@ -122,16 +136,6 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, minHeight: 60)
 
                     Spacer()
-
-                    Text("")
-                        .underline()
-                        .foregroundColor(themeEngine.colors.accent)
-                        .onTapGesture {
-                            Links.openInstagram()
-                        }
-                        .opacity(showMenu ? 0 : 1)
-                        .animation(.easeInOut(duration: 0.2), value: showMenu)
-                        .position(x: geo.size.width / 2, y: geo.size.height - 60)
                 }
                 .zIndex(2)
 

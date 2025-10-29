@@ -25,7 +25,7 @@ struct SettingsView: View {
         NavigationView {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    Text("Einstellungen")
+                    Text("Settings")
                         .font(.largeTitle.bold())
                         .foregroundColor(themeEngine.colors.accent)
                         .frame(maxWidth: .infinity)
@@ -47,7 +47,7 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.bottom, 8)
                     
-                    Button("Test-Push senden") {
+                    Button("Send Test Push") {
                         triggerTestNotification()
                     }
                     .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
@@ -59,7 +59,7 @@ struct SettingsView: View {
             .background(themeEngine.colors.background.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Schließen") {
+                    Button("Close") {
                         selectedPage = "start"
                         presentationMode.wrappedValue.dismiss()
                     }
@@ -68,9 +68,9 @@ struct SettingsView: View {
             }
             .alert(isPresented: $showDeleteConfirmation) {
                 Alert(
-                    title: Text("Theme wirklich löschen?"),
-                    message: Text("Das Theme „\(themeToDelete?.name ?? "")“ wird entfernt. Diese Aktion kann nicht rückgängig gemacht werden."),
-                    primaryButton: .destructive(Text("Löschen")) {
+                    title: Text("Really delete theme?"),
+                    message: Text("The theme \"\(themeToDelete?.name ?? "")\" will be removed. This action cannot be undone."),
+                    primaryButton: .destructive(Text("Delete")) {
                         if let theme = themeToDelete {
                             deleteTheme(theme)
                             if logThemeChanges {
@@ -80,7 +80,7 @@ struct SettingsView: View {
                             }
                         }
                     },
-                    secondaryButton: .cancel(Text("Abbrechen"))
+                    secondaryButton: .cancel(Text("Cancel"))
                 )
             }
         }
@@ -101,18 +101,16 @@ struct SettingsView: View {
                     .fill(themeEngine.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
-                Text("Anmeldung")
+                Text("Login")
                     .font(.title3.bold())
                     .foregroundColor(themeEngine.colors.accent)
             }
-            SettingsToggleRow(label: "Login merken", isOn: $rememberLogin) { newValue in
+            SettingsToggleRow(label: "Remember login", isOn: $rememberLogin) { newValue in
                 self.handleRememberLoginChanged(newValue)
             }
         }
         .padding(20)
-        .background(themeEngine.colors.fieldBackground)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+        .liquidGlassCard()
     }
 
     private var privatsphaereCard: some View {
@@ -122,25 +120,23 @@ struct SettingsView: View {
                     .fill(themeEngine.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
-                Text("Privatsphäre")
+                Text("Privacy")
                     .font(.title3.bold())
                     .foregroundColor(themeEngine.colors.accent)
             }
 
             VStack(spacing: 20) {
-                SettingsToggleRow(label: "Links von unbekannten vertrauen", isOn: $trustUnknownLinks) { newValue in
+                SettingsToggleRow(label: "Trust links from unknown sources", isOn: $trustUnknownLinks) { newValue in
                     self.handleTrustUnknownLinksChanged(newValue)
                 }
 
-                SettingsToggleRow(label: "Face ID / Code-Schutz aktivieren", isOn: $useBiometrics) { newValue in
+                SettingsToggleRow(label: "Enable Face ID / Passcode protection", isOn: $useBiometrics) { newValue in
                     self.handleUseBiometricsChanged(newValue)
                 }
             }
         }
         .padding(20)
-        .background(themeEngine.colors.fieldBackground)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+        .liquidGlassCard()
     }
 
     private var discordLoggingCard: some View {
@@ -156,13 +152,12 @@ struct SettingsView: View {
             }
 
             ZStack {
-                TextField("Webhook-URL einfügen", text: $discordWebhookURL)
+                TextField("Paste webhook URL", text: $discordWebhookURL)
                     .textContentType(.URL)
                     .keyboardType(.URL)
                     .autocapitalization(.none)
                     .padding()
-                    .background(themeEngine.colors.background)
-                    .cornerRadius(12)
+                    .liquidGlassBackground(cornerRadius: 12)
                     .foregroundColor(themeEngine.colors.text)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -185,11 +180,11 @@ struct SettingsView: View {
             if let webhookURL = URL(string: discordWebhookURL),
                webhookURL.absoluteString.contains("discord.com/api/webhooks/") {
 
-                Text("Verbunden mit: \(webhookURL.host ?? "-")")
+                Text("Connected to: \(webhookURL.host ?? "-")")
                     .font(.footnote)
                     .foregroundColor(themeEngine.colors.text.opacity(0.7))
 
-                Button("Test-Post senden") {
+                Button("Send test post") {
                     Task {
                         await webhookManager.logTestPost()
                     }
@@ -197,17 +192,15 @@ struct SettingsView: View {
                 .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
 
                 VStack(alignment: .leading, spacing: 24) {
-                    SettingsToggleRow(label: "Login/Logout posten", isOn: $logLoginLogout)
-                    SettingsToggleRow(label: "Theme-Änderungen posten", isOn: $logThemeChanges)
-                    SettingsToggleRow(label: "Einstellungen-Änderungen posten", isOn: $logSettingsChanges)
+                    SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
+                    SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
+                    SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
                 }
                 .padding(.top, 8)
             }
         }
         .padding(20)
-        .background(themeEngine.colors.fieldBackground)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+        .liquidGlassCard()
     }
 
     private var designCard: some View {
@@ -227,7 +220,7 @@ struct SettingsView: View {
 
             // Picker Card
             VStack {
-                Picker("Design wählen", selection: $themeEngine.selectedThemeId) {
+                Picker("Choose design", selection: $themeEngine.selectedThemeId) {
                     ForEach(availableThemes) { theme in
                         let themeId = theme.id
                         let themeName = theme.name
@@ -244,9 +237,7 @@ struct SettingsView: View {
                 }
             }
             .padding(16)
-            .background(themeEngine.colors.background)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
+            .liquidGlassBackground(cornerRadius: 12)
 
             ForEach(availableThemes) { theme in
                 HStack {
@@ -266,20 +257,16 @@ struct SettingsView: View {
                     }
                 }
                 .padding(16)
-                .background(themeEngine.colors.background)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
+                .liquidGlassBackground(cornerRadius: 12)
             }
 
-            Button("Theme hochladen") {
+            Button("Upload theme") {
                 showingImporter = true
             }
             .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
         }
         .padding(20)
-        .background(themeEngine.colors.fieldBackground)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+        .liquidGlassCard()
     }
 
     private func deleteTheme(_ theme: ThemeModel) {
@@ -441,9 +428,7 @@ private struct SettingsToggleRow: View {
             .tint(themeEngine.colors.accent)
         }
         .padding(16)
-        .background(themeEngine.colors.background)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, y: 2)
+        .liquidGlassBackground(cornerRadius: 12)
     }
 }
 

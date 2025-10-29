@@ -15,4 +15,15 @@ extension Color {
         }
         self.init(red: r, green: g, blue: b)
     }
+    
+    var hexString: String? {
+        guard let components = UIColor(self).cgColor.components else { return nil }
+        guard components.count >= 3 else { return nil }
+        
+        let r = Int(components[0] * 255)
+        let g = Int(components[1] * 255)
+        let b = Int(components[2] * 255)
+        
+        return String(format: "%02X%02X%02X", r, g, b)
+    }
 }

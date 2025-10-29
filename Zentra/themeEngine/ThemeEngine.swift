@@ -21,53 +21,53 @@ class ThemeEngine: ObservableObject {
 
     private let defaultTheme = ThemeModel(
         id: "default",
-        name: "Standard",
-        background: "#1E1E1E",
+        name: "Liquid Glass",
+        background: "#0A0E27",
         text: "#FFFFFF",
-        accent: "#007AFF",
+        accent: "#5B8DEF",
         icon: "#FFFFFF",
-        buttonBackground: "#007AFF",
-        buttonText: "#000000",
-        fieldBackground: "#2C2C2E",
-        border: "#3A3A3C",
-        navbarBackground: "#1E1E1E",
+        buttonBackground: "#5B8DEF",
+        buttonText: "#FFFFFF",
+        fieldBackground: "#1A1F3A",
+        border: "#2A3F5F",
+        navbarBackground: "#0A0E27",
         navbarText: "#FFFFFF",
-        error: "#FF3B30",
-        warning: "#FFD600"
+        error: "#FF6B6B",
+        warning: "#FFD93D"
     )
 
     private let lightTheme = ThemeModel(
         id: "light",
-        name: "Light",
-        background: "#FFFFFF",
-        text: "#000000",
-        accent: "#007AFF",
-        icon: "#000000",
-        buttonBackground: "#E0E0E0",
-        buttonText: "#000000",
-        fieldBackground: "#F2F2F2",
-        border: "#CCCCCC",
-        navbarBackground: "#F9F9F9",
-        navbarText: "#000000",
-        error: "#FF3B30",
-        warning: "#FFD600"
+        name: "Liquid Glass Light",
+        background: "#F0F4FF",
+        text: "#1A1F3A",
+        accent: "#5B8DEF",
+        icon: "#1A1F3A",
+        buttonBackground: "#5B8DEF",
+        buttonText: "#FFFFFF",
+        fieldBackground: "#FFFFFF",
+        border: "#D0D9F0",
+        navbarBackground: "#F0F4FF",
+        navbarText: "#1A1F3A",
+        error: "#FF6B6B",
+        warning: "#FFD93D"
     )
 
     private let darkTheme = ThemeModel(
         id: "dark",
-        name: "Dark",
-        background: "#121212",
+        name: "Liquid Glass Dark",
+        background: "#0A0E27",
         text: "#FFFFFF",
-        accent: "#FF9500",
+        accent: "#9BB5FF",
         icon: "#FFFFFF",
-        buttonBackground: "#1F1F1F",
-        buttonText: "#FFFFFF",
-        fieldBackground: "#1C1C1E",
-        border: "#333333",
-        navbarBackground: "#121212",
+        buttonBackground: "#9BB5FF",
+        buttonText: "#0A0E27",
+        fieldBackground: "#1A1F3A",
+        border: "#2A3F5F",
+        navbarBackground: "#0A0E27",
         navbarText: "#FFFFFF",
-        error: "#FF3B30",
-        warning: "#FFD600"
+        error: "#FF6B6B",
+        warning: "#FFD93D"
     )
 
     /// Setup des Themes-Ordners: Nur das defaultTheme wird bei Bedarf automatisch angelegt.
@@ -79,7 +79,7 @@ class ThemeEngine: ObservableObject {
         do {
             if !fileManager.fileExists(atPath: themesDir.path) {
                 try fileManager.createDirectory(at: themesDir, withIntermediateDirectories: true)
-                print("✅ Themes-Ordner erstellt.")
+                print("✅ Themes folder created.")
                 sendDiscordWidgetMessage(themeName: defaultTheme.name, isSetupMessage: true)
             }
 
@@ -100,7 +100,7 @@ class ThemeEngine: ObservableObject {
             }
 
         } catch {
-            print("❌ Fehler beim Setup desThemes-Ordners: \(error)")
+            print("❌ Error setting up themes folder: \(error)")
         }
     }
 

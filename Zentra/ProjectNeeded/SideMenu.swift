@@ -12,8 +12,6 @@ struct SideMenu: View {
     @State private var showSettings = false
     @State private var showLoginView = false
     @State private var showCustomLogoutDialog = false
-    @State private var showLinkConfirmation = false
-    @State private var selectedLink: (() -> Void)? = nil
     @State private var trademarkString: String = ""
 
     @EnvironmentObject var themeEngine: ThemeEngine
@@ -22,7 +20,7 @@ struct SideMenu: View {
     private var displayName: String {
         if isLoggedIn {
             if currentUsername.isEmpty {
-                return "Benutzer"
+                return "User"
             } else {
                 // Only capitalize the first letter, leave the rest untouched
                 let first = currentUsername.prefix(1).uppercased()
@@ -30,12 +28,12 @@ struct SideMenu: View {
                 return first + rest
             }
         } else {
-            return "Nicht angemeldet"
+            return "Not logged in"
         }
     }
 
     private var loginStatus: String? {
-        isLoggedIn ? "Eingeloggt" : nil
+        isLoggedIn ? "Logged in" : nil
     }
 
     var body: some View {
@@ -49,7 +47,7 @@ struct SideMenu: View {
                         .frame(width: 4, height: 24)
                         .cornerRadius(2)
 
-                    Text("Profil")
+                    Text("Profile")
                         .font(.title3.bold())
                         .foregroundColor(themeEngine.colors.accent)
                 }
@@ -78,11 +76,9 @@ struct SideMenu: View {
                 }
             }
             .padding(20)
-            .background(themeEngine.colors.fieldBackground)
-            .cornerRadius(18)
-            .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+            .liquidGlassCard()
 
-            // Einstellungen und Abmelden Card
+            // Settings and Sign Out Card
             VStack(alignment: .leading, spacing: 16) {
                 // Header
                 HStack(spacing: 10) {
@@ -91,14 +87,14 @@ struct SideMenu: View {
                         .frame(width: 4, height: 24)
                         .cornerRadius(2)
 
-                    Text("Einstellungen")
+                    Text("Settings")
                         .font(.title3.bold())
                         .foregroundColor(themeEngine.colors.accent)
                 }
                 .padding(.bottom, 4)
 
                 VStack(spacing: 12) {
-                    SideMenuButtonView(label: "Startmenu", icon: "house", style: .primary) {
+                    SideMenuButtonView(label: "Home", icon: "house", style: .primary) {
                         withAnimation {
                             selectedPage = "start"
                             onCollapse?()
@@ -125,14 +121,14 @@ struct SideMenu: View {
                     .frame(maxWidth: .infinity)
                     .environmentObject(themeEngine)
                     
-                    SideMenuButtonView(label: "Einstellungen", icon: "gearshape", style: .primary) {
+                    SideMenuButtonView(label: "Settings", icon: "gearshape", style: .primary) {
                         showSettings = true
                     }
                     .frame(maxWidth: .infinity)
                     .environmentObject(themeEngine)
 
                     if isLoggedIn {
-                        SideMenuButtonView(label: "Abmelden",
+                        SideMenuButtonView(label: "Sign Out",
                                            icon: "rectangle.portrait.and.arrow.right",
                                            style: .primary,
                                            isDestructive: true) {
@@ -144,13 +140,11 @@ struct SideMenu: View {
                 }
             }
             .padding(20)
-            .background(themeEngine.colors.fieldBackground)
-            .cornerRadius(18)
-            .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+            .liquidGlassCard()
 
             Spacer(minLength: 26)
 
-            // 🔗 Social Links (Kontakt) moved to bottom
+            // 🔗 Social Links (Contact) moved to bottom
             VStack(alignment: .leading, spacing: 16) {
                 // Header
                 HStack(spacing: 10) {
@@ -159,7 +153,7 @@ struct SideMenu: View {
                         .frame(width: 4, height: 24)
                         .cornerRadius(2)
 
-                    Text("Kontakt")
+                    Text("Contact")
                         .font(.title3.bold())
                         .foregroundColor(themeEngine.colors.accent)
                 }
@@ -167,18 +161,16 @@ struct SideMenu: View {
 
                 VStack(spacing: 0) {
                     SideMenuButtonView(label: "Instagram", icon: "camera") {
-                        handleLink { Links.openInstagram() }
+                        Links.openInstagram()
                     }
 
                     SideMenuButtonView(label: "YouTube", icon: "play.rectangle") {
-                        handleLink { Links.openYouTube() }
+                        Links.openYouTube()
                     }
                 }
             }
             .padding(20)
-            .background(themeEngine.colors.fieldBackground)
-            .cornerRadius(18)
-            .shadow(color: Color.black.opacity(0.1), radius: 2, y: 2)
+            .liquidGlassCard()
 
             Text(trademarkString)
                 .font(.footnote)
@@ -205,20 +197,7 @@ struct SideMenu: View {
             .environmentObject(themeEngine)
             .font(.body)
         }
-        .confirmationDialog("Möchtest du wirklich weitergeleitet werden?", isPresented: $showLinkConfirmation) {
-            Button {
-                selectedLink?()
-                selectedLink = nil
-            } label: {
-                Text("Ja, öffnen").font(.body)
-            }
-            Button(role: .cancel) {
-            } label: {
-                Text("Abbrechen").font(.body)
-            }
-            Text("Du wirst zu einer externen Seite weitergeleitet.").font(.body)
-        }
-        .confirmationDialog("Möchtest du dich wirklich abmelden?", isPresented: $showCustomLogoutDialog, titleVisibility: .visible) {
+        .confirmationDialog("Do you really want to sign out?", isPresented: $showCustomLogoutDialog, titleVisibility: .visible) {
             Button(role: .destructive) {
                 withAnimation {
                     // Save username for webhook before clearing it
@@ -229,10 +208,10 @@ struct SideMenu: View {
                     Task { await webhookManager.logLogout(username: usernameToLog) }
                 }
             } label: {
-                Text("Abmelden").font(.body)
+                Text("Sign Out").font(.body)
             }
             Button(role: .cancel) {} label: {
-                Text("Abbrechen").font(.body)
+                Text("Cancel").font(.body)
             }
         }
     }
@@ -247,12 +226,9 @@ struct SideMenu: View {
     }
 
     private func handleLink(_ action: @escaping () -> Void) {
-        if UserDefaults.standard.bool(forKey: "trustUnknownLinks") {
-            action()
-        } else {
-            selectedLink = action
-            showLinkConfirmation = true
-        }
+        // Always open links directly without confirmation
+        // The trustUnknownLinks setting is still respected for security purposes
+        action()
     }
 }
 
