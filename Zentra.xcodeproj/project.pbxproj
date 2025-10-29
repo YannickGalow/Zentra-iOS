@@ -1,0 +1,630 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 90;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		CE64BF352DDDDC1C0082C674 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CE64BF182DDDDC1A0082C674 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE64BF1F2DDDDC1A0082C674;
+			remoteInfo = Zentra;
+		};
+		CE64BF3F2DDDDC1C0082C674 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CE64BF182DDDDC1A0082C674 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE64BF1F2DDDDC1A0082C674;
+			remoteInfo = Zentra;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CE5860112DE1E2EC00BE5481 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+			);
+			name = "Embed Watch Content";
+		};
+		CE7366752DFF56240085031D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CE64BF202DDDDC1A0082C674 /* Zentra.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zentra.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE64BF342DDDDC1C0082C674 /* ZentraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZentraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE64BF3E2DDDDC1C0082C674 /* ZentraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZentraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE73665C2DFF56220085031D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		CE73665E2DFF56220085031D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CE585FC92DE11A3700BE5481 /* Exceptions for "Zentra" folder in "Zentra" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Info.plist,
+			);
+			target = CE64BF1F2DDDDC1A0082C674 /* Zentra */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		CE73664D2DFEF0E90085031D /* Exceptions for "Zentra" folder in "Compile Sources" phase from "Zentra" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = CE64BF1C2DDDDC1A0082C674 /* Sources */;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CE585FD12DE11B5700BE5481 /* themes */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = themes;
+			path = ../themes;
+			sourceTree = SOURCE_ROOT;
+		};
+		CE64BF222DDDDC1A0082C674 /* Zentra */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CE585FC92DE11A3700BE5481 /* Exceptions for "Zentra" folder in "Zentra" target */,
+				CE73664D2DFEF0E90085031D /* Exceptions for "Zentra" folder in "Compile Sources" phase from "Zentra" target */,
+			);
+			path = Zentra;
+			sourceTree = "<group>";
+		};
+		CE64BF372DDDDC1C0082C674 /* ZentraTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ZentraTests;
+			sourceTree = "<group>";
+		};
+		CE64BF412DDDDC1C0082C674 /* ZentraUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ZentraUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CE64BF1D2DDDDC1A0082C674 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		CE64BF312DDDDC1C0082C674 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		CE64BF3B2DDDDC1C0082C674 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CE64BF172DDDDC1A0082C674 = {
+			isa = PBXGroup;
+			children = (
+				CE64BF222DDDDC1A0082C674 /* Zentra */,
+				CE64BF372DDDDC1C0082C674 /* ZentraTests */,
+				CE64BF412DDDDC1C0082C674 /* ZentraUITests */,
+				CE73665B2DFF56220085031D /* Frameworks */,
+				CE64BF212DDDDC1A0082C674 /* Products */,
+			);
+			sourceTree = "<group>";
+			usesTabs = 0;
+		};
+		CE64BF212DDDDC1A0082C674 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CE585FD12DE11B5700BE5481 /* themes */,
+				CE64BF202DDDDC1A0082C674 /* Zentra.app */,
+				CE64BF342DDDDC1C0082C674 /* ZentraTests.xctest */,
+				CE64BF3E2DDDDC1C0082C674 /* ZentraUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CE73665B2DFF56220085031D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CE73665C2DFF56220085031D /* WidgetKit.framework */,
+				CE73665E2DFF56220085031D /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CE64BF1F2DDDDC1A0082C674 /* Zentra */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE64BF472DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "Zentra" */;
+			buildPhases = (
+				CE64BF1C2DDDDC1A0082C674 /* Sources */,
+				CE64BF1D2DDDDC1A0082C674 /* Frameworks */,
+				CE64BF1E2DDDDC1A0082C674 /* Resources */,
+				CE5860112DE1E2EC00BE5481 /* Embed Watch Content */,
+				CE7366752DFF56240085031D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				CE64BF222DDDDC1A0082C674 /* Zentra */,
+			);
+			name = Zentra;
+			productName = Zentra;
+			productReference = CE64BF202DDDDC1A0082C674 /* Zentra.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE64BF332DDDDC1C0082C674 /* ZentraTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE64BF4C2DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "ZentraTests" */;
+			buildPhases = (
+				CE64BF302DDDDC1C0082C674 /* Sources */,
+				CE64BF312DDDDC1C0082C674 /* Frameworks */,
+				CE64BF322DDDDC1C0082C674 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CE64BF362DDDDC1C0082C674 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CE64BF372DDDDC1C0082C674 /* ZentraTests */,
+			);
+			name = ZentraTests;
+			productName = ZentraTests;
+			productReference = CE64BF342DDDDC1C0082C674 /* ZentraTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CE64BF3D2DDDDC1C0082C674 /* ZentraUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE64BF4F2DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "ZentraUITests" */;
+			buildPhases = (
+				CE64BF3A2DDDDC1C0082C674 /* Sources */,
+				CE64BF3B2DDDDC1C0082C674 /* Frameworks */,
+				CE64BF3C2DDDDC1C0082C674 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CE64BF402DDDDC1C0082C674 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CE64BF412DDDDC1C0082C674 /* ZentraUITests */,
+			);
+			name = ZentraUITests;
+			productName = ZentraUITests;
+			productReference = CE64BF3E2DDDDC1C0082C674 /* ZentraUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CE64BF182DDDDC1A0082C674 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					CE64BF1F2DDDDC1A0082C674 = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					CE64BF332DDDDC1C0082C674 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = CE64BF1F2DDDDC1A0082C674;
+					};
+					CE64BF3D2DDDDC1C0082C674 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = CE64BF1F2DDDDC1A0082C674;
+					};
+				};
+			};
+			buildConfigurationList = CE64BF1B2DDDDC1A0082C674 /* Build configuration list for PBXProject "Zentra" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CE64BF172DDDDC1A0082C674;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 90;
+			productRefGroup = CE64BF212DDDDC1A0082C674 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CE64BF1F2DDDDC1A0082C674 /* Zentra */,
+				CE64BF332DDDDC1C0082C674 /* ZentraTests */,
+				CE64BF3D2DDDDC1C0082C674 /* ZentraUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CE64BF1E2DDDDC1A0082C674 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		CE64BF322DDDDC1C0082C674 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		CE64BF3C2DDDDC1C0082C674 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CE64BF1C2DDDDC1A0082C674 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		CE64BF302DDDDC1C0082C674 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		CE64BF3A2DDDDC1C0082C674 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CE64BF362DDDDC1C0082C674 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE64BF1F2DDDDC1A0082C674 /* Zentra */;
+			targetProxy = CE64BF352DDDDC1C0082C674 /* PBXContainerItemProxy */;
+		};
+		CE64BF402DDDDC1C0082C674 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE64BF1F2DDDDC1A0082C674 /* Zentra */;
+			targetProxy = CE64BF3F2DDDDC1C0082C674 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CE64BF482DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "Zentra" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Zentra;
+				CODE_SIGN_ENTITLEMENTS = Zentra/ZentraDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Zentra/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Zentra;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID is requested for Locking App";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.Zentra;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CE64BF492DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "Zentra" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Zentra;
+				CODE_SIGN_ENTITLEMENTS = Zentra/Zentra.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Zentra/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Zentra;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID is requested for Locking App";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.Zentra;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CE64BF4A2DDDDC1C0082C674 /* Debug configuration for PBXProject "Zentra" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CE64BF4B2DDDDC1C0082C674 /* Release configuration for PBXProject "Zentra" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CE64BF4D2DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "ZentraTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.ZentraTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zentra.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Zentra";
+			};
+			name = Debug;
+		};
+		CE64BF4E2DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "ZentraTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.ZentraTests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = gv.Zentra;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zentra.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Zentra";
+			};
+			name = Release;
+		};
+		CE64BF502DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "ZentraUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.ZentraUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Zentra;
+			};
+			name = Debug;
+		};
+		CE64BF512DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "ZentraUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 847FQWHZR2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = gv.ZentraUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Zentra;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CE64BF1B2DDDDC1A0082C674 /* Build configuration list for PBXProject "Zentra" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE64BF4A2DDDDC1C0082C674 /* Debug configuration for PBXProject "Zentra" */,
+				CE64BF4B2DDDDC1C0082C674 /* Release configuration for PBXProject "Zentra" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		CE64BF472DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "Zentra" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE64BF482DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "Zentra" */,
+				CE64BF492DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "Zentra" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		CE64BF4C2DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "ZentraTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE64BF4D2DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "ZentraTests" */,
+				CE64BF4E2DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "ZentraTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		CE64BF4F2DDDDC1C0082C674 /* Build configuration list for PBXNativeTarget "ZentraUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE64BF502DDDDC1C0082C674 /* Debug configuration for PBXNativeTarget "ZentraUITests" */,
+				CE64BF512DDDDC1C0082C674 /* Release configuration for PBXNativeTarget "ZentraUITests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CE64BF182DDDDC1A0082C674 /* Project object */;
+}
