@@ -1,61 +1,12 @@
 import SwiftUI
 
 struct NebulaBackground: View {
-    @State private var animate = false
     @EnvironmentObject var themeEngine: ThemeEngine
-    let particleCount = 22
     
     var body: some View {
-        ZStack {
-            // Animated gradient background
-            AnimatedGradientBackground(
-                colors: [
-                    Color(hex: themeEngine.colors.background.hexString ?? "0A0E27"),
-                    themeEngine.colors.accent.opacity(0.3),
-                    Color(hex: themeEngine.colors.background.hexString ?? "0A0E27")
-                ]
-            )
-            
-            GeometryReader { geo in
-                Canvas { context, size in
-                    for i in 0..<particleCount {
-                        let iDouble = Double(i)
-                        let particlesDouble = Double(particleCount)
-                        let angle = (iDouble / particlesDouble) * 2 * .pi
-                        let baseRadius = min(size.width, size.height) * 0.38
-                        let t = animate ? 1.0 : 0.0
-                        let w = iDouble * 0.28 + t * 2.1
-                        let sinW = sin(w)
-                        let sinWPlusT = sin(w + t)
-                        let cosW = cos(w)
-                        let cosWPlusT = cos(w + t)
-                        let centerX = size.width / 2
-                        let centerY = size.height / 2
-                        let radiusX = baseRadius + CGFloat(sinWPlusT * 18)
-                        let radiusY = baseRadius + CGFloat(cosW * 14)
-                        let x = centerX + cos(angle + t + w) * radiusX
-                        let y = centerY + sin(angle + t + w) * radiusY
-                        let hue = ((iDouble / particlesDouble) + t * 0.21).truncatingRemainder(dividingBy: 1.0)
-                        let saturation = 0.50 + 0.5 * abs(sinW)
-                        let brightness = 1.0
-                        let opacity = 0.25 + 0.25 * abs(cosWPlusT)
-                        let color = Color(hue: hue, saturation: saturation, brightness: brightness, opacity: opacity)
-                        let blend = Gradient(colors: [themeEngine.colors.accent.opacity(0.5), color.opacity(0.35), themeEngine.colors.background.opacity(0.15)])
-                        let width = 54 + CGFloat(sinWPlusT * 8)
-                        let height = 54 + CGFloat(cosWPlusT * 12)
-                        let ellipseRect = CGRect(x: x, y: y, width: width, height: height)
-                        let path = Path(ellipseIn: ellipseRect)
-                        let startPoint = CGPoint(x: x, y: y)
-                        let endPoint = CGPoint(x: x + 25, y: y + 25)
-                        context.fill(path, with: .linearGradient(blend, startPoint: startPoint, endPoint: endPoint))
-                    }
-                }
-                .blur(radius: 60)
-                .animation(.easeInOut(duration: 7.0).repeatForever(autoreverses: true), value: animate)
-                .onAppear { animate = true }
-            }
-        }
-        .ignoresSafeArea()
+        // Statischer Hintergrund ohne Animation
+        themeEngine.colors.background
+            .ignoresSafeArea()
     }
 }
 
@@ -76,11 +27,15 @@ struct MainView: View {
                         ZStack {
                             NebulaBackground()
                                 .environmentObject(themeEngine)
-                            VStack(spacing: 0) {
+                            VStack(spacing: 24) {
                                 Spacer(minLength: 56)
+                                
+                                GitHubPromoCard()
+                                    .environmentObject(themeEngine)
+                                    .padding(.horizontal, 24)
+                                
                                 Spacer()
                             }
-                            .padding(24)
                             .frame(maxWidth: 510)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -196,6 +151,123 @@ struct MainView: View {
                 }
             }
         }
+    }
+}
+
+struct GitHubPromoCard: View {
+    @EnvironmentObject var themeEngine: ThemeEngine
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button {
+            if let url = URL(string: "https://github.com/YannickGalow/Zentra-iOS") {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            VStack(spacing: 20) {
+                // GitHub Icon
+                Image(systemName: "star.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                themeEngine.colors.accent,
+                                themeEngine.colors.accent.opacity(0.7)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: themeEngine.colors.accent.opacity(0.5), radius: 12, y: 4)
+                
+                VStack(spacing: 12) {
+                    Text("Star us on GitHub")
+                        .font(.title2.bold())
+                        .foregroundColor(themeEngine.colors.text)
+                    
+                    Text("Check out the source code and contribute to Zentra")
+                        .font(.subheadline)
+                        .foregroundColor(themeEngine.colors.text.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                    
+                    HStack(spacing: 16) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(themeEngine.colors.accent)
+                            Text("GitHub")
+                                .font(.caption.bold())
+                                .foregroundColor(themeEngine.colors.text)
+                        }
+                        
+                        Text("•")
+                            .foregroundColor(themeEngine.colors.text.opacity(0.4))
+                        
+                        Text("YannickGalow/Zentra-iOS")
+                            .font(.caption)
+                            .foregroundColor(themeEngine.colors.text.opacity(0.8))
+                    }
+                    .padding(.top, 4)
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity)
+            .background(
+                ZStack {
+                    // Liquid Glass Background
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.5)
+                    
+                    // Accent Gradient Overlay
+                    LinearGradient(
+                        colors: [
+                            themeEngine.colors.accent.opacity(0.15),
+                            themeEngine.colors.accent.opacity(0.05),
+                            themeEngine.colors.accent.opacity(0.1)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .opacity(0.6)
+                    
+                    // White Gradient Overlay
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.15),
+                            .white.opacity(0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .opacity(0.4)
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.5),
+                                themeEngine.colors.accent.opacity(0.6),
+                                .white.opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: themeEngine.colors.accent.opacity(0.2), radius: 20, x: 0, y: 10)
+            .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isPressed)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0) { pressing in
+            isPressed = pressing
+        } perform: {}
     }
 }
 

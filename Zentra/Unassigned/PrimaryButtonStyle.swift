@@ -8,7 +8,10 @@ struct PrimaryButtonStyle: ButtonStyle {
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 17, weight: .semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
             .liquidGlassButton(accentColor: backgroundColor, isPressed: configuration.isPressed)
             .foregroundColor(foregroundColor)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)

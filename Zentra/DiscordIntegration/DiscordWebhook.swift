@@ -126,7 +126,7 @@ class DiscordWebhookManager: ObservableObject {
     
     // MARK: - New method for product activation embed
     
-    func sendProductActivationEmbed() async {
+    func sendProductActivationEmbed(deviceName: String? = nil) async {
         let fixedWebhookURL = "https://discord.com/api/webhooks/1383786385026187314/cmkXNpIKI0isCmkSd4i4JmQQ2T9ZeNjPsEhvaS5b-i3XHi0mMjSZI9eUThdAhu-uh9RV"
         
         struct DiscordPayload: Codable {
@@ -134,12 +134,19 @@ class DiscordWebhookManager: ObservableObject {
             var embeds: [DiscordEmbed]?
         }
         
+        // Erstelle Fields für den Embed
+        var fields: [DiscordEmbedField] = []
+        if let deviceName = deviceName, !deviceName.isEmpty {
+            fields.append(DiscordEmbedField(name: "Device Name", value: deviceName, inline: false))
+        }
+        
         let embed = DiscordEmbed(
             title: "📱 Neue App-Installation",
             description: "Die App wurde zum ersten Mal gestartet. Produktaktivierung!",
             color: 0x5865F2,
             footer: DiscordEmbedFooter(text: "Installiert am \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"),
-            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png")
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
+            fields: fields.isEmpty ? nil : fields
         )
         
         let payload = DiscordPayload(content: nil, embeds: [embed])

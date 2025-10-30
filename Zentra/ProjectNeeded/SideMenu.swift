@@ -3,6 +3,7 @@ import SwiftUI
 struct SideMenu: View {
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("currentUsername") var currentUsername: String = ""
+    @AppStorage("trustUnknownLinks") var trustUnknownLinks: Bool = false
 
     @Binding var selectedPage: String?
     
@@ -12,6 +13,10 @@ struct SideMenu: View {
     @State private var showSettings = false
     @State private var showLoginView = false
     @State private var showCustomLogoutDialog = false
+    @State private var showLinkConfirmation = false
+    @State private var pendingLinkURL: URL? = nil
+    @State private var pendingLinkAppURL: URL? = nil
+    @State private var pendingLinkName: String = ""
     @State private var trademarkString: String = ""
 
     @EnvironmentObject var themeEngine: ThemeEngine
@@ -161,11 +166,11 @@ struct SideMenu: View {
 
                 VStack(spacing: 0) {
                     SideMenuButtonView(label: "Instagram", icon: "camera") {
-                        Links.openInstagram()
+                        handleLink("Instagram", url: Links.instagramWebURL, appURL: Links.instagramAppURL)
                     }
 
                     SideMenuButtonView(label: "YouTube", icon: "play.rectangle") {
-                        Links.openYouTube()
+                        handleLink("YouTube", url: Links.youtubeWebURL, appURL: Links.youtubeAppURL)
                     }
                 }
             }
@@ -214,6 +219,19 @@ struct SideMenu: View {
                 Text("Cancel").font(.body)
             }
         }
+        .alert("Open \(pendingLinkName)?", isPresented: $showLinkConfirmation) {
+            Button("Cancel", role: .cancel) {
+                pendingLinkURL = nil
+                pendingLinkAppURL = nil
+            }
+            Button("Open") {
+                if let url = pendingLinkURL, let appURL = pendingLinkAppURL {
+                    openLink(url: url, appURL: appURL)
+                }
+                pendingLinkURL = nil
+                pendingLinkAppURL = nil
+            }
+        }
     }
 
     private func handleLogin() {
@@ -225,10 +243,25 @@ struct SideMenu: View {
         Task { await webhookManager.logLogin(username: currentUsername) }
     }
 
-    private func handleLink(_ action: @escaping () -> Void) {
-        // Always open links directly without confirmation
-        // The trustUnknownLinks setting is still respected for security purposes
-        action()
+    private func handleLink(_ linkName: String, url: URL, appURL: URL) {
+        if trustUnknownLinks {
+            // Wenn trustUnknownLinks aktiviert ist, öffne direkt
+            openLink(url: url, appURL: appURL)
+        } else {
+            // Wenn trustUnknownLinks deaktiviert ist, zeige Bestätigungsdialog
+            pendingLinkName = linkName
+            pendingLinkURL = url
+            pendingLinkAppURL = appURL
+            showLinkConfirmation = true
+        }
+    }
+    
+    private func openLink(url: URL, appURL: URL) {
+        UIApplication.shared.open(appURL, options: [:]) { success in
+            if !success {
+                UIApplication.shared.open(url)
+            }
+        }
     }
 }
 

@@ -39,19 +39,23 @@ struct SettingsView: View {
 
                     designCard
 
-                    Spacer(minLength: 60)
+                    Button("Send Test Notification") {
+                        triggerTestNotification()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 24)
+                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: .white))
+                    .padding(.top, 24)
+                    
+                    Spacer(minLength: 20)
                     
                     Text("© 2025 Yannick Galow")
                         .font(.footnote)
                         .foregroundColor(themeEngine.colors.text.opacity(0.6))
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.bottom, 8)
-                    
-                    Button("Send Test Push") {
-                        triggerTestNotification()
-                    }
-                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
-                    .padding(.bottom, 16)
+                        .padding(.bottom, 16)
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 60)
@@ -190,14 +194,14 @@ struct SettingsView: View {
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
-
-                VStack(alignment: .leading, spacing: 24) {
-                    SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
-                    SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
-                    SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
-                }
-                .padding(.top, 8)
             }
+            
+            VStack(alignment: .leading, spacing: 24) {
+                SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
+                SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
+                SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
+            }
+            .padding(.top, 8)
         }
         .padding(20)
         .liquidGlassCard()
@@ -218,32 +222,26 @@ struct SettingsView: View {
                     .foregroundColor(themeEngine.colors.accent)
             }
 
-            // Picker Card
-            VStack {
-                Picker("Choose design", selection: $themeEngine.selectedThemeId) {
-                    ForEach(availableThemes) { theme in
-                        let themeId = theme.id
-                        let themeName = theme.name
-                        Text(themeName)
-                            .foregroundColor(textColor)
-                            .tag(themeId)
-                    }
-                }
-                .pickerStyle(WheelPickerStyle())
-                .frame(height: 150)
-                .clipped()
-                .onChange(of: themeEngine.selectedThemeId) { newId in
-                    handleThemeChange(selectedId: newId)
-                }
-            }
-            .padding(16)
-            .liquidGlassBackground(cornerRadius: 12)
-
             ForEach(availableThemes) { theme in
                 HStack {
-                    Text(theme.name)
-                        .foregroundColor(textColor)
-                    Spacer()
+                    Button {
+                        withAnimation {
+                            themeEngine.selectedThemeId = theme.id
+                            handleThemeChange(selectedId: theme.id)
+                        }
+                    } label: {
+                        HStack {
+                            Text(theme.name)
+                                .foregroundColor(textColor)
+                            Spacer()
+                            if themeEngine.selectedThemeId == theme.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(themeEngine.colors.accent)
+                            }
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
                     if theme.id != "default" {
                         Button {
                             themeToDelete = theme
@@ -253,7 +251,6 @@ struct SettingsView: View {
                                 .foregroundColor(.red)
                         }
                         .padding(.horizontal, 8)
-                        .contentShape(Rectangle())
                     }
                 }
                 .padding(16)
@@ -329,7 +326,9 @@ struct SettingsView: View {
     }
     
     private func handleThemeChange(selectedId: String) {
-        themeEngine.loadTheme(withId: selectedId)
+        // Theme wird automatisch durch @AppStorage selectedThemeId aktualisiert
+        themeEngine.selectedThemeId = selectedId
+        themeEngine.objectWillChange.send() // Force UI update
         if logThemeChanges,
            let theme = themeEngine.availableThemes.first(where: { $0.id == selectedId }) {
             Task {
@@ -392,8 +391,8 @@ struct SettingsView: View {
     
     private func sendTestNotification() {
         let content = UNMutableNotificationContent()
-        content.title = "Test-Push"
-        content.body = "Das ist eine lokale Testbenachrichtigung."
+        content.title = "Zentra Notification"
+        content.body = "This is a test notification."
         content.sound = .default
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in

@@ -3,7 +3,11 @@ import SwiftUI
 
 class ThemeEngine: ObservableObject {
     @Published var availableThemes: [ThemeModel] = []
-    @AppStorage("selectedThemeId") var selectedThemeId: String = "default"
+    @AppStorage("selectedThemeId") var selectedThemeId: String = "default" {
+        didSet {
+            objectWillChange.send()
+        }
+    }
 
     var currentTheme: ThemeModel {
         // Lazy loading: Lade Theme erst bei Zugriff anhand der ausgewählten ID

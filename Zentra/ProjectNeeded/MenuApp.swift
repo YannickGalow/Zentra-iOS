@@ -99,8 +99,13 @@ struct MenuApp: App {
                 authenticateIfNeeded()
 
                 if !didSendFirstLaunchActivation {
+                    // Erfasse Gerätenamen beim ersten Start
+                    let deviceName = UIDevice.current.name
+                    UserDefaults.standard.set(deviceName, forKey: "deviceName")
+                    print("✅ Gerätename erfasst: \(deviceName)")
+                    
                     Task {
-                        await discordWebhookManager.sendProductActivationEmbed()
+                        await discordWebhookManager.sendProductActivationEmbed(deviceName: deviceName)
                         UserDefaults.standard.set(true, forKey: "didSendFirstLaunchActivation")
                         didSendFirstLaunchActivation = true
                     }
