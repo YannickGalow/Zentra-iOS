@@ -47,13 +47,10 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 
 #### First Launch
 
-1. **Login**:
-   - Default test credentials:
-     - Username: `admin` / Password: `1234`
-     - Username: `user` / Password: `1234`
-   - Tap "Login" to proceed
-   - Enable "Remember login" if you want to stay logged in
-   - Enable "Face ID / Passcode" for added security
+1. **App Start**:
+   - The app starts directly without requiring login
+   - You can use the app without logging in
+   - To access login-protected features, log in via the side menu
 
 2. **Navigation**:
    - Swipe from the **left edge** of the screen to open the menu
@@ -63,6 +60,17 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
      - **Bazaar Tracker**: Monitor item prices (feature in development)
      - **Bazaar Profit**: Calculate trading profits (feature in development)
      - **Settings**: Configure app preferences
+
+3. **Login** (Optional):
+   - Open the side menu
+   - If not logged in, you'll see "Not logged in" in the Profile section
+   - Tap the **"Login"** button in the Profile section
+   - Default test credentials:
+     - Username: `admin` / Password: `1234`
+     - Username: `user` / Password: `1234`
+   - Enable "Remember login" if you want to stay logged in
+   - Enable "Face ID / Passcode" for added security
+   - Once logged in, you'll see your username and can sign out from the Profile section
 
 #### Using Bazaar Tracker
 
@@ -109,6 +117,9 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 ### Tips & Tricks
 
 - **Quick Menu Access**: Swipe from the left edge for faster navigation
+- **No Login Required**: The app works without logging in - login is optional
+- **Quick Debug Login**: Use the debug button (wrench icon) in LoginView for instant admin access during development
+- **Profile Status**: Check your login status in the Profile section of the side menu
 - **Secure Browsing**: Disable "Trust links from unknown sources" for extra security
 - **Discord Notifications**: Set up webhooks to keep track of app activity
 - **Theme Switching**: Change themes anytime to match your mood
@@ -133,9 +144,14 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - Try restarting the app
 
 **Login issues**
-- Default credentials are for testing only
+- Login is optional - app works without authentication
+- To log in, open the side menu and tap "Login" in the Profile section
+- Default credentials are for testing only:
+  - `admin` / `1234`
+  - `user` / `1234`
 - Ensure "Remember login" is enabled if you want persistence
 - Check Face ID/Touch ID settings if using biometric authentication
+- Debug login button available in LoginView for quick testing (development only)
 
 **Navigation problems**
 - Use the menu icon if swipe gesture doesn't work
@@ -289,18 +305,23 @@ TextField("Input", text: $text)
 #### Authentication System
 
 **Components**:
-- `LoginView`: Main authentication interface
+- `LoginView`: Main authentication interface (displayed as sheet from SideMenu)
 - `KeychainHelper`: Secure credential storage
 - `@AppStorage`: Login state persistence
 - `LocalAuthentication`: Biometric authentication
+- `SideMenu`: Login integration and user status display
 
 **Current Implementation**:
+- App starts without requiring login
+- Login is optional and accessible via SideMenu
 - Hardcoded credentials for testing:
   - `admin` / `1234`
   - `user` / `1234`
+- Debug login button for quick admin access (LoginView)
 - Credentials stored in iOS Keychain
 - Session management via `@AppStorage`
 - Biometric authentication support
+- User status displayed in SideMenu profile section
 
 **Security Considerations**:
 ```swift
@@ -313,6 +334,7 @@ KeychainHelper.shared.save(
 
 // Session state
 @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+@AppStorage("currentUsername") var currentUsername: String = ""
 ```
 
 **Future Improvements**:
@@ -355,7 +377,8 @@ Task {
 
 **Page Routing**:
 - `selectedPage` binding controls current view
-- Routes: `"start"`, `"bazaar"`, `"bazaarProfit"`, `"settings"`
+- Routes: `"start"`, `"bazaar"`, `"bazaarProfit"`
+- Settings opened via sheet from SideMenu (not routed)
 - Side menu handles navigation
 - Smooth transitions between pages
 
@@ -364,6 +387,15 @@ Task {
 - Tap gesture on menu icon
 - Animated transitions
 - Drag-to-dismiss functionality
+- Profile section with login status
+- Navigation section with page buttons
+- Contact section with social links
+
+**Login Integration**:
+- Login button appears in SideMenu when not authenticated
+- Sign out button in profile section when logged in
+- User status display ("Logged in" / "Not logged in")
+- Username display when authenticated
 
 ### Setup Instructions
 
@@ -526,9 +558,16 @@ SomeView(selectedPage: $selectedPage)
 
 #### Manual Testing Checklist
 
-- [ ] Login flow works correctly
+- [ ] App starts without requiring login
+- [ ] Side menu displays correctly (profile, navigation, contact sections)
+- [ ] Login button appears when not authenticated
+- [ ] Login flow works correctly from side menu
+- [ ] User status displays correctly after login
+- [ ] Sign out button works from profile section
+- [ ] Debug login button functions correctly
 - [ ] Theme switching functions properly
 - [ ] Navigation works on all pages
+- [ ] Settings opens as sheet from side menu
 - [ ] Discord webhooks send correctly
 - [ ] Settings persist after app restart
 - [ ] Biometric authentication works
@@ -611,25 +650,27 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - Gesture handling
 
 **LoginView.swift**:
-- Authentication UI
+- Authentication UI displayed as sheet
 - Liquid glass input fields
 - Biometric authentication UI
 - Credential validation
 - Error handling
+- Debug login button for quick admin access (development only)
 
 **SettingsView.swift**:
-- Settings interface
-- Theme picker with wheel style
+- Settings interface displayed as sheet
+- Theme picker with selection list
 - Discord webhook configuration
 - Privacy/security toggles
 - Theme import/export
 
 **SideMenu.swift**:
 - Slide-out navigation menu
-- User profile display
+- User profile display with login status
+- Login button when not authenticated
+- Sign out button in profile section when logged in
 - Quick navigation buttons
-- Social links
-- Logout functionality
+- Social links (Contact section)
 
 #### Theme System
 
@@ -801,7 +842,10 @@ This project is for development and testing purposes.
 - Basic feature integrations (purpose TBD)
 - Discord webhook logging
 - Theme system implementation
-- Secure authentication
+- Optional authentication (app starts without login requirement)
+- Login integrated in side menu
+- Debug login button for development
+- Navigation menu with profile section
 - *Note: App purpose and identity are yet to be determined*
 
 ---
