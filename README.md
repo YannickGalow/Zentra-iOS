@@ -1,6 +1,6 @@
 # Zentra iOS
 
-A modern iOS application with liquid glass design featuring Hypixel Skyblock integration, Discord webhook logging, and advanced theming system.
+A modern iOS application with liquid glass design. Current purpose and identity are yet to be determined.
 
 ---
 
@@ -8,15 +8,17 @@ A modern iOS application with liquid glass design featuring Hypixel Skyblock int
 
 ### Welcome to Zentra
 
-Zentra is a sleek iOS application designed for Hypixel Skyblock players and enthusiasts. The app features a beautiful liquid glass design with modern glassmorphism effects, providing an elegant and intuitive user experience.
+Zentra is a sleek iOS application with a beautiful liquid glass design featuring modern glassmorphism effects, providing an elegant and intuitive user experience. The app's specific purpose and identity are currently under development.
 
 ### Key Features
 
-#### 🎮 Hypixel Skyblock Integration
-- **Bazaar Tracker**: Track and monitor Hypixel Skyblock bazaar prices in real-time
-- **Bazaar Profit Calculator**: Calculate potential profits from bazaar trading opportunities
+#### 🔧 Features (Under Development)
+- **Bazaar Tracker**: Track and monitor prices in real-time
+- **Bazaar Profit Calculator**: Calculate potential profits from trading opportunities
 - **Price Alerts**: Set up alerts for specific item prices
 - **Saved Items**: Save frequently tracked items for quick access
+
+*Note: These features are currently included but the app's primary purpose is yet to be determined.*
 
 #### 🎨 Theming System
 - **Pre-installed Themes**:
@@ -58,11 +60,13 @@ Zentra is a sleek iOS application designed for Hypixel Skyblock players and enth
    - Or tap the **menu icon** (☰) in the top-left corner
    - Navigate between:
      - **Home**: Main dashboard with animated background
-     - **Bazaar Tracker**: Monitor item prices
-     - **Bazaar Profit**: Calculate trading profits
+     - **Bazaar Tracker**: Monitor item prices (feature in development)
+     - **Bazaar Profit**: Calculate trading profits (feature in development)
      - **Settings**: Configure app preferences
 
 #### Using Bazaar Tracker
+
+*Note: This feature is currently included but the app's primary purpose is yet to be determined.*
 
 1. Open the side menu
 2. Select "Bazaar Tracker"
@@ -176,7 +180,7 @@ Zentra/
 │   ├── LiquidGlassModifier.swift  # Glassmorphism view modifiers
 │   └── Color+Hex.swift         # Color hex conversion utilities
 │
-├── HypixelSkyblock/           # Hypixel Skyblock features
+├── HypixelSkyblock/           # Features (purpose yet to be determined)
 │   ├── BazaarTrackerView.swift     # Real-time price tracking
 │   └── BazaarProfitCalculatorView.swift  # Profit calculations
 │
@@ -528,7 +532,7 @@ SomeView(selectedPage: $selectedPage)
 - [ ] Discord webhooks send correctly
 - [ ] Settings persist after app restart
 - [ ] Biometric authentication works
-- [ ] Bazaar features function correctly
+- [ ] Feature integrations function correctly
 - [ ] All themes display properly
 - [ ] Input fields are readable
 - [ ] Animations are smooth
@@ -649,7 +653,7 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - Shadow and blur effects
 - Reusable design components
 
-#### Hypixel Integration
+#### Feature Integration (Purpose TBD)
 
 **BazaarTrackerView.swift**:
 - Real-time API integration
@@ -663,9 +667,11 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - Market analysis
 - (Currently placeholder - to be implemented)
 
+*Note: These features are included but the app's primary purpose is yet to be determined.*
+
 ### API Integration
 
-#### Hypixel Skyblock API
+#### External API Integration
 
 **Endpoints Used**:
 - Bazaar data endpoint
@@ -758,6 +764,7 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 ### Future Roadmap
 
 #### Planned Features
+- [ ] Define and implement primary app purpose
 - [ ] Remote authentication system
 - [ ] Cloud theme synchronization
 - [ ] Push notifications for price alerts
@@ -791,10 +798,11 @@ This project is for development and testing purposes.
 ### Version 1.0 (Current)
 - Initial release
 - Liquid glass design system
-- Basic Hypixel Skyblock integration
+- Basic feature integrations (purpose TBD)
 - Discord webhook logging
 - Theme system implementation
 - Secure authentication
+- *Note: App purpose and identity are yet to be determined*
 
 ---
 
