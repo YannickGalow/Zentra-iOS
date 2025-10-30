@@ -52,31 +52,13 @@ struct MenuApp: App {
         WindowGroup {
             ZStack {
                 if isUnlocked {
-                    if isLoggedIn {
-                        VStack {
-                            switch selectedPage {
-                            case "settings":
-                                SettingsView(selectedPage: $selectedPage)
-                                    .environmentObject(themeEngine)
-                                    .environmentObject(discordWebhookManager)
-                                    .transition(.move(edge: .trailing))
-                            default:
-                                MainView(selectedPage: $selectedPage)
-                                    .environmentObject(discordWebhookManager)
-                                    .transition(.opacity)
-                            }
-                        }
-                        .environmentObject(themeEngine)
-                        .environmentObject(discordWebhookManager)
-                    } else {
-                        LoginView(onLogin: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isLoggedIn = true
-                                selectedPage = nil
-                            }
-                        })
-                        .transition(.opacity)
+                    VStack {
+                        MainView(selectedPage: $selectedPage)
+                            .environmentObject(discordWebhookManager)
+                            .transition(.opacity)
                     }
+                    .environmentObject(themeEngine)
+                    .environmentObject(discordWebhookManager)
                 } else {
                     Color.black.opacity(0.9)
                         .ignoresSafeArea()

@@ -17,7 +17,6 @@ struct SideMenu: View {
     @State private var pendingLinkURL: URL? = nil
     @State private var pendingLinkAppURL: URL? = nil
     @State private var pendingLinkName: String = ""
-    @State private var trademarkString: String = ""
 
     @EnvironmentObject var themeEngine: ThemeEngine
     @EnvironmentObject var webhookManager: DiscordWebhookManager
@@ -79,11 +78,31 @@ struct SideMenu: View {
                     }
                     Spacer()
                 }
+                
+                // Login or Sign Out Button
+                if isLoggedIn {
+                    SideMenuButtonView(label: "Sign Out",
+                                       icon: "rectangle.portrait.and.arrow.right",
+                                       style: .primary,
+                                       isDestructive: true) {
+                        showCustomLogoutDialog = true
+                    }
+                    .frame(maxWidth: .infinity)
+                    .environmentObject(themeEngine)
+                } else {
+                    SideMenuButtonView(label: "Login",
+                                       icon: "person.badge.key.fill",
+                                       style: .primary) {
+                        showLoginView = true
+                    }
+                    .frame(maxWidth: .infinity)
+                    .environmentObject(themeEngine)
+                }
             }
             .padding(20)
             .liquidGlassCard()
 
-            // Settings and Sign Out Card
+            // Navigation Card
             VStack(alignment: .leading, spacing: 16) {
                 // Header
                 HStack(spacing: 10) {
@@ -92,7 +111,7 @@ struct SideMenu: View {
                         .frame(width: 4, height: 24)
                         .cornerRadius(2)
 
-                    Text("Settings")
+                    Text("Navigation")
                         .font(.title3.bold())
                         .foregroundColor(themeEngine.colors.accent)
                 }
@@ -131,17 +150,6 @@ struct SideMenu: View {
                     }
                     .frame(maxWidth: .infinity)
                     .environmentObject(themeEngine)
-
-                    if isLoggedIn {
-                        SideMenuButtonView(label: "Sign Out",
-                                           icon: "rectangle.portrait.and.arrow.right",
-                                           style: .primary,
-                                           isDestructive: true) {
-                            showCustomLogoutDialog = true
-                        }
-                        .frame(maxWidth: .infinity)
-                        .environmentObject(themeEngine)
-                    }
                 }
             }
             .padding(20)
@@ -164,27 +172,22 @@ struct SideMenu: View {
                 }
                 .padding(.bottom, 4)
 
-                VStack(spacing: 0) {
-                    SideMenuButtonView(label: "Instagram", icon: "camera") {
+                VStack(spacing: 12) {
+                    SideMenuButtonView(label: "Instagram", icon: "camera", style: .primary) {
                         handleLink("Instagram", url: Links.instagramWebURL, appURL: Links.instagramAppURL)
                     }
+                    .frame(maxWidth: .infinity)
+                    .environmentObject(themeEngine)
 
-                    SideMenuButtonView(label: "YouTube", icon: "play.rectangle") {
+                    SideMenuButtonView(label: "YouTube", icon: "play.rectangle", style: .primary) {
                         handleLink("YouTube", url: Links.youtubeWebURL, appURL: Links.youtubeAppURL)
                     }
+                    .frame(maxWidth: .infinity)
+                    .environmentObject(themeEngine)
                 }
             }
             .padding(20)
             .liquidGlassCard()
-
-            Text(trademarkString)
-                .font(.footnote)
-                .foregroundColor(themeEngine.colors.text.opacity(0.6))
-                .padding(.bottom, 16)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .task {
-                    trademarkString = await TrademarkInfo.string()
-                }
         }
         .padding(.horizontal, 28)
         .frame(minWidth: 260) // Menü wird etwas breiter für vollständige Button-Beschriftung
@@ -197,12 +200,21 @@ struct SideMenu: View {
         }
         .sheet(isPresented: $showLoginView) {
             LoginView(onLogin: {
-                handleLogin()
+                withAnimation {
+                    isLoggedIn = true
+                    showLoginView = false
+                    Task { await webhookManager.logLogin(username: currentUsername) }
+                }
             })
             .environmentObject(themeEngine)
             .font(.body)
         }
-        .confirmationDialog("Do you really want to sign out?", isPresented: $showCustomLogoutDialog, titleVisibility: .visible) {
+        .alert("Do you really want to sign out?", isPresented: $showCustomLogoutDialog) {
+            Button(role: .cancel) {
+                // Cancel - do nothing
+            } label: {
+                Text("Cancel")
+            }
             Button(role: .destructive) {
                 withAnimation {
                     // Save username for webhook before clearing it
@@ -213,10 +225,7 @@ struct SideMenu: View {
                     Task { await webhookManager.logLogout(username: usernameToLog) }
                 }
             } label: {
-                Text("Sign Out").font(.body)
-            }
-            Button(role: .cancel) {} label: {
-                Text("Cancel").font(.body)
+                Text("Sign Out")
             }
         }
         .alert("Open \(pendingLinkName)?", isPresented: $showLinkConfirmation) {
@@ -234,14 +243,6 @@ struct SideMenu: View {
         }
     }
 
-    private func handleLogin() {
-        withAnimation {
-            isLoggedIn = true
-            currentUsername = "admin" // Beispiel, später dynamisch
-            showLoginView = false
-        }
-        Task { await webhookManager.logLogin(username: currentUsername) }
-    }
 
     private func handleLink(_ linkName: String, url: URL, appURL: URL) {
         if trustUnknownLinks {

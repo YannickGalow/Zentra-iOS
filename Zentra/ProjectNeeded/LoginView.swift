@@ -44,8 +44,8 @@ struct LoginView: View {
                             .textContentType(.username)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
+                            .frame(height: 50)
                             .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
                             .background(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 16)
@@ -126,9 +126,10 @@ struct LoginView: View {
                                             .opacity(0.4)
                                     )
                             }
+                            .frame(width: 36, height: 36)
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
+                        .frame(height: 50)
                         .background(
                             ZStack {
                                 RoundedRectangle(cornerRadius: 16)
@@ -211,16 +212,32 @@ struct LoginView: View {
                         .padding(.top, 8)
                     }
 
-                    Button(action: { performLogin() }) {
-                        HStack {
+                    HStack(spacing: 12) {
+                        // Login Button
+                        Button(action: { performLogin() }) {
                             Text("Login")
-                                .fontWeight(.semibold)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .padding(.horizontal, 24)
+                        .buttonStyle(LoginButtonStyle(
+                            backgroundColor: themeEngine.colors.accent,
+                            foregroundColor: .white
+                        ))
+
+                        // Debug Button - Quick Admin Login
+                        Button(action: { debugLogin() }) {
+                            Image(systemName: "wrench.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 50, height: 50)
+                        }
+                        .buttonStyle(LoginButtonStyle(
+                            backgroundColor: themeEngine.colors.accent.opacity(0.75),
+                            foregroundColor: .white
+                        ))
                     }
-                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: .white))
                     .padding(.top, 8)
 
                     Spacer().frame(height: 40)
@@ -261,6 +278,65 @@ struct LoginView: View {
                 }
             }
         }
+    }
+
+    func debugLogin() {
+        withAnimation {
+            username = "admin"
+            password = "1234"
+            showError = false
+            currentUsername = "admin"
+            KeychainHelper.shared.delete(service: keychainService, account: "admin")
+            onLogin?()
+        }
+    }
+}
+
+// Custom Button Style for Login Buttons
+private struct LoginButtonStyle: ButtonStyle {
+    var backgroundColor: Color
+    var foregroundColor: Color
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    backgroundColor.opacity(0.9),
+                                    backgroundColor.opacity(0.7)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.2)
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.4),
+                                .white.opacity(0.15)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: backgroundColor.opacity(0.4), radius: configuration.isPressed ? 6 : 12, x: 0, y: configuration.isPressed ? 3 : 6)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
