@@ -27,7 +27,13 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
   - Liquid Glass Dark: Dark variant with enhanced contrast
 - **Custom Themes**: Import your own theme configurations via JSON files
 - **Instant Switching**: Change themes with real-time preview
+- **Loading Animation**: Visual feedback when switching themes
 - **Beautiful Design**: Liquid glass aesthetics with smooth animations
+
+#### ⚙️ Performance Settings
+- **Animation Control**: Toggle app-wide animations on/off
+- **Smooth Performance**: Disable animations for better performance on older devices
+- **Instant Actions**: When disabled, all actions happen instantly without delays
 
 #### 🔐 Security Features
 - **Face ID / Touch ID**: Biometric authentication support
@@ -41,7 +47,10 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
   - Login/Logout events
   - Theme changes
   - Settings modifications
+  - Custom messages (optional)
+- **Quick Messages**: Send custom messages directly to Discord
 - **Easy Setup**: Configure webhook URL in settings
+- **Smart Display**: Settings only appear when a valid webhook URL is entered
 
 ### Getting Started
 
@@ -84,24 +93,28 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 
 #### Setting Up Discord Webhooks
 
-1. Go to **Settings** → **Discord Logging**
+1. Go to **Settings** → **Discord Integration Settings**
 2. Create a webhook in your Discord server:
    - Server Settings → Integrations → Webhooks
    - Create a new webhook
    - Copy the webhook URL
 3. Paste the URL into Zentra settings
-4. Enable the logging options you want:
-   - ✅ Post login/logout
-   - ✅ Post theme changes
-   - ✅ Post settings changes
-5. Test the connection by tapping "Send test post"
+4. Once a valid webhook URL is entered, additional settings will appear:
+   - **Enable quick messages text field**: Toggle to show custom message input
+   - **Custom Message**: Send custom messages directly to Discord (when enabled)
+   - **Post login/logout**: Log authentication events
+   - **Post theme changes**: Log theme switching events
+   - **Post settings changes**: Log configuration changes
+5. Test the connection by tapping "Send test post" at the bottom
+6. All Discord embeds are beautifully formatted with icons, colors, and timestamps
 
 #### Customizing Themes
 
 **Using Pre-installed Themes**:
 1. Go to **Settings** → **Design**
-2. Use the picker to select a theme
-3. Changes apply immediately
+2. Tap on a theme name to select it
+3. A loading animation appears while the theme is being applied
+4. Changes apply immediately with visual feedback
 
 **Importing Custom Themes**:
 1. Prepare a theme JSON file (see developer section for format)
@@ -122,8 +135,11 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - **Profile Status**: Check your login status in the Profile section of the side menu
 - **Secure Browsing**: Disable "Trust links from unknown sources" for extra security
 - **Discord Notifications**: Set up webhooks to keep track of app activity
+- **Custom Discord Messages**: Enable quick messages to send custom notifications
 - **Theme Switching**: Change themes anytime to match your mood
+- **Performance Mode**: Disable animations in Performance Settings for better performance
 - **Biometric Security**: Enable Face ID/Touch ID for seamless yet secure access
+- **Instant Actions**: When animations are disabled, all actions happen instantly
 
 ### Troubleshooting
 
@@ -133,10 +149,11 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - Delete and reinstall the app
 
 **Discord webhooks not working**
-- Verify your webhook URL is correct
+- Verify your webhook URL is correct and contains "discord.com/api/webhooks/"
 - Check that the Discord bot hasn't been deleted
 - Ensure you have internet connectivity
 - Try the "Send test post" button to verify
+- Note: Discord settings only appear when a valid webhook URL is entered
 
 **Themes not loading**
 - Check that theme JSON files are properly formatted
@@ -213,6 +230,7 @@ Zentra/
 ├── Unassigned/              # Shared components
 │   ├── Links.swift           # External link handlers
 │   ├── PrimaryButtonStyle.swift  # Reusable button styles
+│   ├── AnimationHelper.swift    # Conditional animation utilities
 │   └── TrademarkInfo.swift   # App branding information
 │
 └── Assets.xcassets/         # App icons and images
@@ -350,12 +368,15 @@ KeychainHelper.shared.save(
 - Async/await pattern for network requests
 - Configurable via `@AppStorage`
 - Error handling with fallbacks
+- Conditional UI display based on webhook validity
 
 **Event Types**:
-1. **Login Events**: User login/logout
-2. **Theme Changes**: Theme switching
-3. **Settings Changes**: Configuration updates
-4. **Test Posts**: Webhook verification
+1. **Login Events**: User login/logout (🔐 Login / 🚪 Logout)
+2. **Theme Changes**: Theme switching (🎨 Theme Change)
+3. **Settings Changes**: Configuration updates (⚙️ Settings Change)
+4. **Custom Messages**: User-defined messages (💬 Custom Message)
+5. **Test Posts**: Webhook verification (✅ Test Post)
+6. **Product Activation**: First launch detection (📱 New App Installation)
 
 **Implementation**:
 ```swift
@@ -365,13 +386,26 @@ KeychainHelper.shared.save(
 Task {
     await discordWebhookManager.logLogin(username: username)
 }
+
+// Send custom message
+Task {
+    await discordWebhookManager.logCustomMessage(text: "Hello from Zentra!")
+}
 ```
 
 **Webhook Payload Structure**:
 - JSON format with embeds
-- Color-coded by event type
-- Timestamp included
+- Color-coded by event type (Discord blurple #5865F2)
+- Beautiful embeds with icons, author, thumbnails
+- Timestamp included in footer
 - Configurable via Discord webhook settings
+- English language throughout
+
+**UI Behavior**:
+- Discord settings only appear when valid webhook URL is entered
+- Validates URL format (must contain "discord.com/api/webhooks/")
+- Custom message field appears when "Enable quick messages text field" is toggled
+- Settings toggles are always visible once webhook is configured
 
 #### Navigation System
 
@@ -575,6 +609,11 @@ SomeView(selectedPage: $selectedPage)
 - [ ] All themes display properly
 - [ ] Input fields are readable
 - [ ] Animations are smooth
+- [ ] Animation toggle works app-wide
+- [ ] Discord settings appear/disappear correctly
+- [ ] Custom Discord messages send properly
+- [ ] Theme loading animation displays correctly
+- [ ] Sheet presentations respect animation setting
 
 #### Testing on Different Devices
 
@@ -659,10 +698,12 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 
 **SettingsView.swift**:
 - Settings interface displayed as sheet
-- Theme picker with selection list
-- Discord webhook configuration
+- Theme picker with selection list and loading animation
+- Discord Integration Settings (conditional display)
+- Performance Settings (animation toggle)
 - Privacy/security toggles
 - Theme import/export
+- Custom Discord message support
 
 **SideMenu.swift**:
 - Slide-out navigation menu
@@ -840,12 +881,18 @@ This project is for development and testing purposes.
 - Initial release
 - Liquid glass design system
 - Basic feature integrations (purpose TBD)
-- Discord webhook logging
+- Discord Integration Settings with conditional display
+- Custom Discord message support
+- App-wide animation toggle (Performance Settings)
+- Theme loading animation
+- Improved Discord embed design (English, icons, colors)
 - Theme system implementation
 - Optional authentication (app starts without login requirement)
 - Login integrated in side menu
 - Debug login button for development
 - Navigation menu with profile section
+- Complete English localization (translated from German)
+- Enhanced animation controls throughout the app
 - *Note: App purpose and identity are yet to be determined*
 
 ---
