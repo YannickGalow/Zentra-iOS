@@ -48,67 +48,73 @@ struct DiscordEmbedFooter: Codable {
 class DiscordWebhookManager: ObservableObject {
     @AppStorage("discordWebhookURL") private var webhookURL: String = ""
 
-    @Published var status = DiscordStatus(isConnected: false, serverName: "Mein Discord-Server", channelName: "#allgemein")
+    @Published var status = DiscordStatus(isConnected: false, serverName: "My Discord Server", channelName: "#general")
     @Published var logMessages: [String] = []
 
-    private let serverName = "Mein Discord-Server"
-    private let channelName = "#allgemein"
+    private let serverName = "My Discord Server"
+    private let channelName = "#general"
 
     // MARK: - Public Logging Methods
 
     func logLogin(username: String, sendEmbed: Bool = true, onlyLocal: Bool = false) async {
-        let content = "\(username) hat sich eingeloggt."
+        let content = "\(username) logged in."
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Login",
+            title: "🔐 Login",
             description: content,
             color: 0x00FF00,
-            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))
+            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png")
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : content, embed: embed, onlyLocal: onlyLocal)
     }
 
     func logLogout(username: String, sendEmbed: Bool = true, onlyLocal: Bool = false) async {
-        let content = "\(username) hat sich ausgeloggt."
+        let content = "\(username) logged out."
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Logout",
+            title: "🚪 Logout",
             description: content,
             color: 0xFF0000,
-            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))
+            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png")
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : content, embed: embed, onlyLocal: onlyLocal)
     }
 
     func logThemeChange(themeName: String, sendEmbed: Bool = true, onlyLocal: Bool = false) async {
-        let content = "Theme wurde zu \(themeName) geändert"
+        let content = "Theme changed to \(themeName)"
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Theme Änderung",
+            title: "🎨 Theme Change",
             description: content,
-            color: 0x0000FF,
+            color: 0x5865F2,
             footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
             author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
             thumbnail: DiscordEmbedThumbnail(url: "https://i.imgur.com/zPyOczX.png"),
-            fields: [DiscordEmbedField(name: "Neues Theme", value: themeName, inline: nil)]
+            fields: [DiscordEmbedField(name: "New Theme", value: themeName, inline: false)]
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : content, embed: embed, onlyLocal: onlyLocal)
     }
 
     func logSettingsChange(setting: String, newValue: String, sendEmbed: Bool = true, onlyLocal: Bool = false) async {
-        let content = "**\(setting)** wurde **\(newValue)**"
+        let content = "**\(setting)** was set to **\(newValue)**"
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Änderungen (Settingsview.swift)",
+            title: "⚙️ Settings Change",
             description: content,
             color: 0xFFA500,
-            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))
+            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
+            fields: [DiscordEmbedField(name: "Setting", value: setting, inline: true), DiscordEmbedField(name: "Value", value: newValue, inline: true)]
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : content, embed: embed, onlyLocal: onlyLocal)
     }
 
     func logCustomMessage(text: String, sendEmbed: Bool = true, onlyLocal: Bool = false) async {
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Benutzerdefinierte Nachricht",
+            title: "💬 Custom Message",
             description: text,
-            color: 0x808080,
-            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))
+            color: 0x5865F2,
+            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
+            thumbnail: DiscordEmbedThumbnail(url: "https://i.imgur.com/zPyOczX.png")
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : text, embed: embed, onlyLocal: onlyLocal)
     }
@@ -116,10 +122,12 @@ class DiscordWebhookManager: ObservableObject {
     func logTestPost(sendEmbed: Bool = true, onlyLocal: Bool = false) async {
         let content = ""
         let embed = sendEmbed ? DiscordEmbed(
-            title: "Post Nachricht (Settingsview.swift)",
-            description: "",
-            color: 0x9932CC,
-            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))
+            title: "✅ Test Post",
+            description: "This is a test message from Zentra App to verify Discord webhook integration.",
+            color: 0x5865F2,
+            footer: DiscordEmbedFooter(text: DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)),
+            author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
+            thumbnail: DiscordEmbedThumbnail(url: "https://i.imgur.com/zPyOczX.png")
         ) : nil
         await sendDiscordMessage(content: sendEmbed ? nil : content, embed: embed, onlyLocal: onlyLocal)
     }
@@ -134,17 +142,17 @@ class DiscordWebhookManager: ObservableObject {
             var embeds: [DiscordEmbed]?
         }
         
-        // Erstelle Fields für den Embed
+        // Create fields for the embed
         var fields: [DiscordEmbedField] = []
         if let deviceName = deviceName, !deviceName.isEmpty {
             fields.append(DiscordEmbedField(name: "Device Name", value: deviceName, inline: false))
         }
         
         let embed = DiscordEmbed(
-            title: "📱 Neue App-Installation",
-            description: "Die App wurde zum ersten Mal gestartet. Produktaktivierung!",
+            title: "📱 New App Installation",
+            description: "The app was started for the first time. Product activation!",
             color: 0x5865F2,
-            footer: DiscordEmbedFooter(text: "Installiert am \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"),
+            footer: DiscordEmbedFooter(text: "Installed on \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"),
             author: DiscordEmbedAuthor(name: "Zentra App", icon_url: "https://i.imgur.com/zPyOczX.png"),
             fields: fields.isEmpty ? nil : fields
         )
@@ -153,14 +161,14 @@ class DiscordWebhookManager: ObservableObject {
         
         guard let url = URL(string: fixedWebhookURL) else {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Ungültige feste Webhook-URL für Produktaktivierung!")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Invalid fixed webhook URL for product activation!")
             }
             return
         }
         
         guard let jsonData = try? JSONEncoder().encode(payload) else {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Konnte JSON für Produktaktivierung nicht serialisieren.")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Could not serialize JSON for product activation.")
             }
             return
         }
@@ -177,19 +185,19 @@ class DiscordWebhookManager: ObservableObject {
                 await MainActor.run {
                     if httpResponse.statusCode == 204 || httpResponse.statusCode == 200 {
                         self.status = DiscordStatus(isConnected: true, serverName: self.serverName, channelName: self.channelName, errorMessage: nil)
-                        self.logMessages.append("[Embed] 📱 Neue App-Installation")
+                        self.logMessages.append("[Embed] 📱 New App Installation")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
-                            self?.logMessages.removeAll(where: { $0 == "[Embed] 📱 Neue App-Installation" })
+                            self?.logMessages.removeAll(where: { $0 == "[Embed] 📱 New App Installation" })
                         }
                     } else {
-                        let responseBody = String(data: data, encoding: .utf8) ?? "Keine Antwort"
-                        self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Discord-Antwortcode \(httpResponse.statusCode): \(responseBody)")
+                        let responseBody = String(data: data, encoding: .utf8) ?? "No response"
+                        self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Discord response code \(httpResponse.statusCode): \(responseBody)")
                     }
                 }
             }
         } catch {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Fehler beim Senden der Produktaktivierung: \(error.localizedDescription)")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Error sending product activation: \(error.localizedDescription)")
             }
         }
     }
@@ -222,7 +230,7 @@ class DiscordWebhookManager: ObservableObject {
 
         guard webhookURL.hasPrefix("https://"), let url = URL(string: webhookURL) else {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Ungültige Webhook-URL. Bitte in den Einstellungen eintragen!")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Invalid webhook URL. Please enter it in settings!")
             }
             return
         }
@@ -231,7 +239,7 @@ class DiscordWebhookManager: ObservableObject {
 
         guard let jsonData = try? JSONEncoder().encode(payload) else {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Konnte JSON nicht serialisieren.")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Could not serialize JSON.")
             }
             return
         }
@@ -249,8 +257,8 @@ class DiscordWebhookManager: ObservableObject {
                     if httpResponse.statusCode == 204 || httpResponse.statusCode == 200 {
                         self.status = DiscordStatus(isConnected: true, serverName: self.serverName, channelName: self.channelName, errorMessage: nil)
                     } else {
-                        let responseBody = String(data: data, encoding: .utf8) ?? "Keine Antwort"
-                        self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Discord-Antwortcode \(httpResponse.statusCode): \(responseBody)")
+                        let responseBody = String(data: data, encoding: .utf8) ?? "No response"
+                        self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Discord response code \(httpResponse.statusCode): \(responseBody)")
                     }
                     if let c = content {
                         self.logMessages.append(c)
@@ -268,7 +276,7 @@ class DiscordWebhookManager: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Fehler beim Senden: \(error.localizedDescription)")
+                self.status = DiscordStatus(isConnected: false, serverName: self.serverName, channelName: self.channelName, errorMessage: "Error sending: \(error.localizedDescription)")
                 if let c = content {
                     self.logMessages.append(c)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
@@ -297,21 +305,21 @@ struct DiscordWebhookStatusView: View {
         ScrollView {
             VStack(spacing: 16) {
                 if webhookManager.status.isConnected {
-                    Text("Verbunden mit Discord ✅")
+                    Text("Connected to Discord ✅")
                         .font(.headline)
                     Text("Server: \(webhookManager.status.serverName)")
                     Text("Channel: \(webhookManager.status.channelName)")
                 } else {
-                    Text("Nicht verbunden ❌")
+                    Text("Not connected ❌")
                         .font(.headline)
                 }
 
-                TextField("Nachricht eingeben", text: $messageText)
+                TextField("Enter message", text: $messageText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.horizontal)
                     .focused($messageFieldIsFocused)
 
-                Button("Nachricht senden") {
+                Button("Send message") {
                     Task {
                         await webhookManager.logCustomMessage(text: messageText)
                     }
@@ -327,7 +335,7 @@ struct DiscordWebhookStatusView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Fertig") { messageFieldIsFocused = false }
+                Button("Done") { messageFieldIsFocused = false }
             }
         }
     }

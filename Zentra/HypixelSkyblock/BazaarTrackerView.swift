@@ -123,7 +123,7 @@ struct BazaarTrackerView: View {
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(themeEngine.colors.accent)
-                    TextField("Item-ID eingeben", text: $searchFieldText)
+                    TextField("Enter Item ID", text: $searchFieldText)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                         .foregroundColor(themeEngine.colors.text)
@@ -201,7 +201,7 @@ struct BazaarTrackerView: View {
                         ScrollView {
                             LazyVStack(spacing: 16) {
                                 if savedItemIds.isEmpty {
-                                    Text("Keine gespeicherten Items")
+                                    Text("No saved items")
                                         .foregroundColor(themeEngine.colors.text.opacity(0.7))
                                         .padding()
                                 }
@@ -263,7 +263,7 @@ struct BazaarTrackerView: View {
                     NavigationView {
                         List {
                             if priceAlerts.isEmpty {
-                                Text("Keine Preisalarme")
+                                Text("No price alerts")
                                     .foregroundColor(themeEngine.colors.text.opacity(0.7))
                             } else {
                                 ForEach(priceAlerts) { alert in
@@ -426,19 +426,19 @@ struct BazaarTrackerView: View {
             priceRefreshTimer = nil
         }
         .sheet(isPresented: $showAlertMenu, onDismiss: {
-            withAnimation {
+            conditionalWithAnimation {
                 showAlertConfirmation = false
             }
             tempAlertPrice = ""
             searchFieldFocused = false
         }) {
             VStack(spacing: 20) {
-                Text("Preisalarm setzen für Buy Offer")
+                Text("Set price alert for Buy Offer")
                     .font(.headline)
                 Text("Item: \((selectedSavedItemId ?? searchItemId).titleCasedWithSpaces)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                TextField("Alarm wenn Buy Offer <= ...", text: $tempAlertPrice)
+                TextField("Alert when Buy Offer <= ...", text: $tempAlertPrice)
                     .keyboardType(.decimalPad)
                     .padding()
                     .background(Color(.systemGray6))
@@ -454,7 +454,7 @@ struct BazaarTrackerView: View {
                     if let value = Double(tempAlertPrice.replacingOccurrences(of: ",", with: ".")), value > 0 {
                         alertPrice = value
                         schedulePriceAlertNotification(for: value)
-                        withAnimation {
+                        conditionalWithAnimation {
                             showAlertConfirmation = true
                         }
                         tempAlertPrice = ""
@@ -481,14 +481,14 @@ struct BazaarTrackerView: View {
             }
             .padding()
         }
-        .alert("Preis-Alarm aktiviert!", isPresented: $showAlertConfirmation) {
+        .alert("Price Alert Activated!", isPresented: $showAlertConfirmation) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Du wirst benachrichtigt, wenn Buy Offer <= \(String(format: "%.2f", alertPrice ?? 0)) Coins ist.")
+            Text("You will be notified when Buy Offer <= \(String(format: "%.2f", alertPrice ?? 0)) Coins.")
         }
     }
 
-    // MARK: - Netzwerk, Laden von Daten
+    // MARK: - Network, Loading Data
     
     func fetchBazaarData(for itemId: String = "ENCHANTED_DIAMOND", isForSavedItem: Bool = false) {
         if isForSavedItem {
@@ -515,14 +515,14 @@ struct BazaarTrackerView: View {
                             if selectedSavedItemId == itemId {
                                 self.item = result
                                 self.isLoading = false
-                                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                                conditionalWithAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                                     self.showItem = true
                                 }
                             }
                         } else {
                             self.item = result
                             self.isLoading = false
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                            conditionalWithAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                                 self.showItem = true
                             }
                         }
@@ -621,7 +621,7 @@ struct BazaarTrackerView: View {
             }
             showItemSavedConfirmation = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-                withAnimation { showItemSavedConfirmation = false }
+                conditionalWithAnimation { showItemSavedConfirmation = false }
                 searchItemId = ""
             }
         }
@@ -630,12 +630,12 @@ struct BazaarTrackerView: View {
     // MARK: - Price Alert Notification
 
     func schedulePriceAlertNotification(for target: Double) {
-        // Hier wird die Notification vorbereitet. Die eigentliche Preis-Prüfung sollte im Timer-Callback erfolgen.
-        // Wenn item?.buyPrice <= target, triggere eine Notification:
+        // Here the notification is prepared. The actual price check should occur in the timer callback.
+        // If item?.buyPrice <= target, trigger a notification:
         if let actual = item?.buyPrice, actual <= target {
             let content = UNMutableNotificationContent()
-            content.title = "Preis Notification"
-            content.body = "Buy Offer ist bei \(String(format: "%.1f", actual)) Coins"
+            content.title = "Price Notification"
+            content.body = "Buy Offer is at \(String(format: "%.1f", actual)) Coins"
             content.sound = .default
             let request = UNNotificationRequest(identifier: "priceAlert_\(selectedSavedItemId ?? searchItemId)", content: content, trigger: nil)
             UNUserNotificationCenter.current().add(request)
@@ -713,11 +713,11 @@ struct BazaarSavedItemRow: View {
                         .font(.subheadline)
                         .foregroundColor(themeEngine.colors.text.opacity(0.6))
                     if loading {
-                        Text("Lädt …")
+                        Text("Loading…")
                             .foregroundColor(themeEngine.colors.accent)
                             .font(.caption.bold())
                     } else if savedItem == nil {
-                        Text("Fehler beim Laden")
+                        Text("Error loading")
                             .font(.caption)
                             .foregroundColor(.red)
                     }

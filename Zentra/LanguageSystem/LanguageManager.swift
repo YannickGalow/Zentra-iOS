@@ -1,5 +1,5 @@
 // LanguageManager.swift
-// Verwalte Spracheinstellungen und Textlokalisierung
+// Manage language settings and text localization
 import Foundation
 import SwiftUI
 
@@ -11,8 +11,8 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var description: String {
         switch self {
-        case .system: return "Systemsprache"
-        case .de: return "Deutsch"
+        case .system: return "System Language"
+        case .de: return "German"
         case .en: return "English"
         }
     }

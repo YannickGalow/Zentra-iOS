@@ -11,11 +11,15 @@ struct SettingsView: View {
     @AppStorage("logLoginLogout") var logLoginLogout: Bool = false
     @AppStorage("logThemeChanges") var logThemeChanges: Bool = false
     @AppStorage("logSettingsChanges") var logSettingsChanges: Bool = false
+    @AppStorage("animationsEnabled") var animationsEnabled: Bool = true
+    @AppStorage("showCustomDiscordMessage") var showCustomDiscordMessage: Bool = false
     @State private var selectedLanguage: String = AppLanguage.system.rawValue
     @Binding var selectedPage: String?
     @State private var showDeleteConfirmation: Bool = false
     @State private var themeToDelete: ThemeModel?
     @State private var showingImporter: Bool = false
+    @State private var isChangingTheme: Bool = false
+    @State private var customDiscordMessage: String = ""
     
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var themeEngine: ThemeEngine
@@ -23,21 +27,24 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    Text("Settings")
-                        .font(.largeTitle.bold())
-                        .foregroundColor(themeEngine.colors.accent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 24)
+            ZStack {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        Text("Settings")
+                            .font(.largeTitle.bold())
+                            .foregroundColor(themeEngine.colors.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 24)
 
-                    anmeldungCard
+                        anmeldungCard
 
-                    privatsphaereCard
+                        privatsphaereCard
 
-                    discordLoggingCard
+                        discordLoggingCard
 
-                    designCard
+                        designCard
+                    
+                    appSettingsCard
 
                     Button("Send Test Notification") {
                         triggerTestNotification()
@@ -59,13 +66,30 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 60)
+                .opacity(isChangingTheme ? (animationsEnabled ? 0.3 : 0.5) : 1.0)
+                .blur(radius: isChangingTheme ? (animationsEnabled ? 3 : 0) : 0)
             }
             .background(themeEngine.colors.background.ignoresSafeArea())
+            
+            // Loading animation during theme change
+            if isChangingTheme {
+                ThemeLoadingView()
+                    .environmentObject(themeEngine)
+                    .transition(animationsEnabled ? .opacity : .identity)
+            }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
+                        let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
                         selectedPage = "start"
-                        presentationMode.wrappedValue.dismiss()
+                        if animationsEnabled {
+                            presentationMode.wrappedValue.dismiss()
+                        } else {
+                            withAnimation(nil) {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        }
                     }
                     .foregroundColor(themeEngine.colors.accent)
                 }
@@ -150,7 +174,7 @@ struct SettingsView: View {
                     .fill(themeEngine.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
-                Text("Discord Logging")
+                Text("Discord Integration Settings")
                     .font(.title3.bold())
                     .foregroundColor(themeEngine.colors.accent)
             }
@@ -181,27 +205,62 @@ struct SettingsView: View {
                     }
             }
 
+            // Only show settings when valid webhook URL is entered
             if let webhookURL = URL(string: discordWebhookURL),
                webhookURL.absoluteString.contains("discord.com/api/webhooks/") {
 
-                Text("Connected to: \(webhookURL.host ?? "-")")
-                    .font(.footnote)
-                    .foregroundColor(themeEngine.colors.text.opacity(0.7))
+                // Toggle to enable/disable custom message feature
+                SettingsToggleRow(label: "Enable quick messages text field", isOn: $showCustomDiscordMessage)
 
+                // Custom message text field (only shown when enabled)
+                if showCustomDiscordMessage {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Custom Message")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(themeEngine.colors.text.opacity(0.8))
+                        
+                        TextField("Enter your message...", text: $customDiscordMessage, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.ultraThinMaterial)
+                                    .opacity(0.6)
+                            )
+                            .foregroundColor(themeEngine.colors.text)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(themeEngine.colors.accent.opacity(0.5), lineWidth: 1)
+                            )
+                            .lineLimit(3...6)
+                    }
+
+                    Button("Send custom message") {
+                        guard !customDiscordMessage.isEmpty else { return }
+                        Task {
+                            await webhookManager.logCustomMessage(text: customDiscordMessage)
+                            customDiscordMessage = ""
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
+                    .disabled(customDiscordMessage.isEmpty)
+                    .opacity(customDiscordMessage.isEmpty ? 0.6 : 1.0)
+                }
+                
+                VStack(alignment: .leading, spacing: 24) {
+                    SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
+                    SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
+                    SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
+                }
+                
+                // Send test post button at the bottom
                 Button("Send test post") {
                     Task {
                         await webhookManager.logTestPost()
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
+                .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent.opacity(0.7), foregroundColor: themeEngine.colors.background))
             }
-            
-            VStack(alignment: .leading, spacing: 24) {
-                SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
-                SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
-                SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
-            }
-            .padding(.top, 8)
         }
         .padding(20)
         .liquidGlassCard()
@@ -225,9 +284,8 @@ struct SettingsView: View {
             ForEach(availableThemes) { theme in
                 HStack {
                     Button {
-                        withAnimation {
-                            themeEngine.selectedThemeId = theme.id
-                            handleThemeChange(selectedId: theme.id)
+                        Task {
+                            await changeTheme(to: theme.id)
                         }
                     } label: {
                         HStack {
@@ -242,7 +300,9 @@ struct SettingsView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    if theme.id != "default" {
+                    // Built-in Themes (default, light, dark) können nicht gelöscht werden
+                    let builtInThemeIds = ["default", "light", "dark"]
+                    if !builtInThemeIds.contains(theme.id) {
                         Button {
                             themeToDelete = theme
                             showDeleteConfirmation = true
@@ -265,8 +325,33 @@ struct SettingsView: View {
         .padding(20)
         .liquidGlassCard()
     }
+    
+    private var appSettingsCard: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(spacing: 12) {
+                Rectangle()
+                    .fill(themeEngine.colors.accent)
+                    .frame(width: 4, height: 24)
+                    .cornerRadius(2)
+                Text("Performance Settings")
+                    .font(.title3.bold())
+                    .foregroundColor(themeEngine.colors.accent)
+            }
+            
+            SettingsToggleRow(label: "Enable Animations", isOn: $animationsEnabled)
+        }
+        .padding(20)
+        .liquidGlassCard()
+    }
 
     private func deleteTheme(_ theme: ThemeModel) {
+        // Built-in Themes können nicht gelöscht werden
+        let builtInThemeIds = ["default", "light", "dark"]
+        if builtInThemeIds.contains(theme.id) {
+            print("⚠️ Built-in Theme kann nicht gelöscht werden:", theme.name)
+            return
+        }
+        
         let fileManager = FileManager.default
         let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
         let themeFile = docsURL.appendingPathComponent("themes").appendingPathComponent("\(theme.id).json")
@@ -317,11 +402,59 @@ struct SettingsView: View {
                     }
 
                 } catch {
-                    print("❌ Fehler beim Kopieren: \(error)")
+                    print("❌ Error copying: \(error)")
                 }
             }
         case .failure(let error):
-            print("❌ Importfehler: \(error)")
+            print("❌ Import error: \(error)")
+        }
+    }
+    
+    private func changeTheme(to themeId: String) async {
+        // Prevent multiple theme changes simultaneously
+        guard !isChangingTheme else { return }
+        
+        // Only show loading animation if animations are enabled
+        if animationsEnabled {
+            // Start loading animation
+            await MainActor.run {
+                conditionalWithAnimation(.easeInOut(duration: 0.2)) {
+                    isChangingTheme = true
+                }
+            }
+            
+            // Kurze Verzögerung für die Animation
+            try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 Sekunden
+        }
+        
+        // Theme anwenden
+        await MainActor.run {
+            conditionalWithAnimation(.easeInOut(duration: 0.4)) {
+                themeEngine.selectedThemeId = themeId
+                themeEngine.objectWillChange.send() // Force UI update
+            }
+        }
+        
+        // Theme vollständig laden lassen und UI aktualisieren
+        if animationsEnabled {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 Sekunden
+        } else {
+            try? await Task.sleep(nanoseconds: 50_000_000) // 0.05 Sekunden
+        }
+        
+        // Discord Logging (falls aktiviert)
+        if logThemeChanges,
+           let theme = themeEngine.availableThemes.first(where: { $0.id == themeId }) {
+            await webhookManager.logThemeChange(themeName: theme.name)
+        }
+        
+        // Hide loading animation (only if it was shown)
+        if animationsEnabled {
+            await MainActor.run {
+                conditionalWithAnimation(.easeInOut(duration: 0.3)) {
+                    isChangingTheme = false
+                }
+            }
         }
     }
     
@@ -363,26 +496,106 @@ struct SettingsView: View {
         }
     }
 
+}
+
+// MARK: - Theme Loading View
+struct ThemeLoadingView: View {
+    @EnvironmentObject var themeEngine: ThemeEngine
+    @AppStorage("animationsEnabled") var animationsEnabled: Bool = true
+    @State private var rotationAngle: Double = 0
+    @State private var scale: CGFloat = 0.8
+    
+    var body: some View {
+        ZStack {
+            // Background with blur
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+            
+            // Liquid Glass Card with loading animation
+            VStack(spacing: 24) {
+                // Rotating spinner
+                ZStack {
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    themeEngine.colors.accent.opacity(0.3),
+                                    themeEngine.colors.accent.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 4
+                        )
+                        .frame(width: 60, height: 60)
+                    
+                    Circle()
+                        .trim(from: 0, to: 0.7)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    themeEngine.colors.accent,
+                                    themeEngine.colors.accent.opacity(0.6)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                        )
+                        .frame(width: 60, height: 60)
+                        .rotationEffect(.degrees(rotationAngle))
+                }
+                .scaleEffect(scale)
+                
+                Text("Applying theme...")
+                    .font(.headline)
+                    .foregroundColor(themeEngine.colors.text)
+            }
+            .padding(40)
+            .liquidGlassCard()
+            .shadow(color: themeEngine.colors.accent.opacity(0.3), radius: 20, x: 0, y: 10)
+        }
+        .onAppear {
+            if animationsEnabled {
+                // Rotation Animation
+                withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
+                    rotationAngle = 360
+                }
+                
+                // Scale Animation
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    scale = 1.0
+                }
+            } else {
+                // Set values immediately without animation
+                rotationAngle = 360
+                scale = 1.0
+            }
+        }
+    }
+}
+
+extension SettingsView {
     private func triggerTestNotification() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             switch settings.authorizationStatus {
             case .notDetermined:
-                // Erstmalig fragen
+                // Ask for the first time
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                     if let error = error {
-                        print("❌ Fehler bei Anfrage der Berechtigung: \(error)")
+                        print("❌ Error requesting permission: \(error)")
                         return
                     }
                     if granted {
                         self.sendTestNotification()
                     } else {
-                        print("❌ Nutzer hat Benachrichtigungen abgelehnt.")
+                        print("❌ User has denied notifications.")
                     }
                 }
             case .authorized, .provisional:
                 self.sendTestNotification()
             case .denied:
-                print("❌ Benachrichtigungen wurden deaktiviert. Bitte in den Systemeinstellungen erlauben.")
+                print("❌ Notifications have been disabled. Please enable them in system settings.")
             default:
                 break
             }
@@ -397,9 +610,9 @@ struct SettingsView: View {
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ Fehler beim Senden der Testbenachrichtigung: \(error)")
+                print("❌ Error sending test notification: \(error)")
             } else {
-                print("✅ Testbenachrichtigung gesendet.")
+                print("✅ Test notification sent.")
             }
         }
     }

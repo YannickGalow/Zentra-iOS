@@ -260,7 +260,7 @@ struct LoginView: View {
     }
 
     func performLogin() {
-        withAnimation {
+        conditionalWithAnimation {
             if (username == "admin" && password == "1234") || (username == "user" && password == "1234") {
                 showError = false
                 currentUsername = username
@@ -274,14 +274,14 @@ struct LoginView: View {
                 showError = true
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation { showError = false }
+                    conditionalWithAnimation { showError = false }
                 }
             }
         }
     }
 
     func debugLogin() {
-        withAnimation {
+        conditionalWithAnimation {
             username = "admin"
             password = "1234"
             showError = false
@@ -298,7 +298,9 @@ private struct LoginButtonStyle: ButtonStyle {
     var foregroundColor: Color
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
+        
+        return configuration.label
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
@@ -336,7 +338,12 @@ private struct LoginButtonStyle: ButtonStyle {
             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .transaction { transaction in
+                if !animationsEnabled {
+                    transaction.animation = nil
+                }
+            }
+            .conditionalAnimation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

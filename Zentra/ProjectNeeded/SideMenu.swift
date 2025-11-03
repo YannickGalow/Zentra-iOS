@@ -1,13 +1,12 @@
 import SwiftUI
 
-struct SideMenu: View {
+struct Sidebar: View {
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("currentUsername") var currentUsername: String = ""
     @AppStorage("trustUnknownLinks") var trustUnknownLinks: Bool = false
 
     @Binding var selectedPage: String?
     
-    // Closure called to collapse the menu, e.g. after page selection
     var onCollapse: (() -> Void)? = nil
 
     @State private var showSettings = false
@@ -26,198 +25,304 @@ struct SideMenu: View {
             if currentUsername.isEmpty {
                 return "User"
             } else {
-                // Only capitalize the first letter, leave the rest untouched
                 let first = currentUsername.prefix(1).uppercased()
                 let rest = currentUsername.dropFirst()
                 return first + rest
             }
         } else {
-            return "Not logged in"
+            return "Guest"
         }
     }
 
-    private var loginStatus: String? {
-        isLoggedIn ? "Logged in" : nil
+    private var loginStatus: String {
+        isLoggedIn ? "Logged in" : "Not logged in"
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            // 📛 Profilbereich
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack(spacing: 10) {
-                    Rectangle()
-                        .fill(themeEngine.colors.accent)
-                        .frame(width: 4, height: 24)
-                        .cornerRadius(2)
-
-                    Text("Profile")
-                        .font(.title3.bold())
-                        .foregroundColor(themeEngine.colors.accent)
-                }
-                .padding(.bottom, 4)
-
-                // Profil content
-                HStack(spacing: 12) {
-                    Image(systemName: isLoggedIn ? "person.crop.circle.fill" : "person.crop.circle.badge.exclam")
-                        .resizable()
-                        .frame(width: 50, height: 50)
-                        .foregroundColor(themeEngine.colors.accent)
-                        .shadow(radius: 4)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(displayName)
-                            .font(.headline)
-                            .foregroundColor(themeEngine.colors.text)
-
-                        if let status = loginStatus {
-                            Text(status)
-                                .font(.subheadline)
-                                .foregroundColor(themeEngine.colors.text.opacity(0.7))
+        ZStack {
+            // Animated gradient background
+            LinearGradient(
+                colors: [
+                    themeEngine.colors.background,
+                    themeEngine.colors.background.opacity(0.98),
+                    themeEngine.colors.background
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Profile Hero Section
+                    VStack(spacing: 20) {
+                        // Avatar with glass effect
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            themeEngine.colors.accent.opacity(0.3),
+                                            themeEngine.colors.accent.opacity(0.1),
+                                            .clear
+                                        ],
+                                        center: .center,
+                                        startRadius: 20,
+                                        endRadius: 60
+                                    )
+                                )
+                                .frame(width: 100, height: 100)
+                            
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            themeEngine.colors.accent.opacity(0.5),
+                                            themeEngine.colors.accent.opacity(0.2)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                                .frame(width: 70, height: 70)
+                            
+                            Image(systemName: isLoggedIn ? "person.crop.circle.fill" : "person.crop.circle")
+                                .resizable()
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(themeEngine.colors.accent)
+                                .shadow(color: themeEngine.colors.accent.opacity(0.6), radius: 12, x: 0, y: 6)
                         }
-                    }
-                    Spacer()
-                }
-                
-                // Login or Sign Out Button
-                if isLoggedIn {
-                    SideMenuButtonView(label: "Sign Out",
-                                       icon: "rectangle.portrait.and.arrow.right",
-                                       style: .primary,
-                                       isDestructive: true) {
-                        showCustomLogoutDialog = true
-                    }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
-                } else {
-                    SideMenuButtonView(label: "Login",
-                                       icon: "person.badge.key.fill",
-                                       style: .primary) {
-                        showLoginView = true
-                    }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
-                }
-            }
-            .padding(20)
-            .liquidGlassCard()
-
-            // Navigation Card
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack(spacing: 10) {
-                    Rectangle()
-                        .fill(themeEngine.colors.accent)
-                        .frame(width: 4, height: 24)
-                        .cornerRadius(2)
-
-                    Text("Navigation")
-                        .font(.title3.bold())
-                        .foregroundColor(themeEngine.colors.accent)
-                }
-                .padding(.bottom, 4)
-
-                VStack(spacing: 12) {
-                    SideMenuButtonView(label: "Home", icon: "house", style: .primary) {
-                        withAnimation {
-                            selectedPage = "start"
-                            onCollapse?()
+                        .padding(.top, 30)
+                        
+                        VStack(spacing: 6) {
+                            Text(displayName)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(themeEngine.colors.text)
+                            
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(themeEngine.colors.accent)
+                                    .frame(width: 6, height: 6)
+                                
+                                Text(loginStatus)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(themeEngine.colors.text.opacity(0.6))
+                            }
                         }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
-
-                    SideMenuButtonView(label: "Bazaar Tracker", icon: "chart.bar.xaxis", style: .primary) {
-                        withAnimation {
-                            selectedPage = "bazaar"
-                            onCollapse?()
+                        
+                        // Auth Button
+                        Button(action: {
+                            if isLoggedIn {
+                                showCustomLogoutDialog = true
+                            } else {
+                                showLoginView = true
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: isLoggedIn ? "rectangle.portrait.and.arrow.right" : "person.badge.key")
+                                    .font(.system(size: 16, weight: .semibold))
+                                
+                                Text(isLoggedIn ? "Sign Out" : "Login")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundColor(isLoggedIn ? themeEngine.colors.error : themeEngine.colors.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(.ultraThinMaterial)
+                                        .opacity(0.6)
+                                    
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: isLoggedIn ? [
+                                                    themeEngine.colors.error.opacity(0.15),
+                                                    themeEngine.colors.error.opacity(0.08)
+                                                ] : [
+                                                    themeEngine.colors.accent.opacity(0.15),
+                                                    themeEngine.colors.accent.opacity(0.08)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                }
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: isLoggedIn ? [
+                                                themeEngine.colors.error.opacity(0.4),
+                                                themeEngine.colors.error.opacity(0.2)
+                                            ] : [
+                                                themeEngine.colors.accent.opacity(0.4),
+                                                themeEngine.colors.accent.opacity(0.2)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.5
+                                    )
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        .padding(.horizontal, 32)
+                        .padding(.top, 8)
                     }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
+                    .padding(.bottom, 40)
                     
-                    SideMenuButtonView(label: "Bazaar Profit", icon: "eurosign.circle", style: .primary) {
-                        withAnimation {
-                            selectedPage = "bazaarProfit"
-                            onCollapse?()
+                    // Navigation Section
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Navigation")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(themeEngine.colors.text.opacity(0.5))
+                                .textCase(.uppercase)
+                                .tracking(1)
+                            Spacer()
                         }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 16)
+                        
+                        VStack(spacing: 8) {
+                            SidebarNavButton(
+                                icon: "house.fill",
+                                label: "Home",
+                                isSelected: selectedPage == "start"
+                            ) {
+                                conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    selectedPage = "start"
+                                    onCollapse?()
+                                }
+                            }
+                            
+                            SidebarNavButton(
+                                icon: "chart.bar.xaxis",
+                                label: "Bazaar Tracker",
+                                isSelected: selectedPage == "bazaar"
+                            ) {
+                                conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    selectedPage = "bazaar"
+                                    onCollapse?()
+                                }
+                            }
+                            
+                            SidebarNavButton(
+                                icon: "eurosign.circle.fill",
+                                label: "Bazaar Profit",
+                                isSelected: selectedPage == "bazaarProfit"
+                            ) {
+                                conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    selectedPage = "bazaarProfit"
+                                    onCollapse?()
+                                }
+                            }
+                            
+                            SidebarNavButton(
+                                icon: "gearshape.fill",
+                                label: "Settings",
+                                isSelected: false
+                            ) {
+                                showSettings = true
+                            }
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 40)
                     }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
                     
-                    SideMenuButtonView(label: "Settings", icon: "gearshape", style: .primary) {
-                        showSettings = true
+                    // Contact Section
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Connect")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(themeEngine.colors.text.opacity(0.5))
+                                .textCase(.uppercase)
+                                .tracking(1)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 16)
+                        
+                        HStack(spacing: 12) {
+                            SidebarSocialButton(
+                                icon: "camera.fill",
+                                label: "Instagram"
+                            ) {
+                                handleLink("Instagram", url: Links.instagramWebURL, appURL: Links.instagramAppURL)
+                            }
+                            
+                            SidebarSocialButton(
+                                icon: "play.rectangle.fill",
+                                label: "YouTube"
+                            ) {
+                                handleLink("YouTube", url: Links.youtubeWebURL, appURL: Links.youtubeAppURL)
+                            }
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 40)
                     }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
                 }
+                .padding(.top, 20)
             }
-            .padding(20)
-            .liquidGlassCard()
-
-            Spacer(minLength: 26)
-
-            // 🔗 Social Links (Contact) moved to bottom
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack(spacing: 10) {
-                    Rectangle()
-                        .fill(themeEngine.colors.accent)
-                        .frame(width: 4, height: 24)
-                        .cornerRadius(2)
-
-                    Text("Contact")
-                        .font(.title3.bold())
-                        .foregroundColor(themeEngine.colors.accent)
-                }
-                .padding(.bottom, 4)
-
-                VStack(spacing: 12) {
-                    SideMenuButtonView(label: "Instagram", icon: "camera", style: .primary) {
-                        handleLink("Instagram", url: Links.instagramWebURL, appURL: Links.instagramAppURL)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
-
-                    SideMenuButtonView(label: "YouTube", icon: "play.rectangle", style: .primary) {
-                        handleLink("YouTube", url: Links.youtubeWebURL, appURL: Links.youtubeAppURL)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .environmentObject(themeEngine)
-                }
-            }
-            .padding(20)
-            .liquidGlassCard()
         }
-        .padding(.horizontal, 28)
-        .frame(minWidth: 260) // Menü wird etwas breiter für vollständige Button-Beschriftung
-        .safeAreaPadding(.top, 24) // Use safeAreaPadding for iOS 26+ compatibility
-        .background(themeEngine.colors.background)
-        .sheet(isPresented: $showSettings) {
+        .frame(minWidth: 300)
+        .sheet(isPresented: Binding(
+            get: { showSettings },
+            set: { newValue in
+                let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
+                if animationsEnabled {
+                    showSettings = newValue
+                } else {
+                    withAnimation(nil) {
+                        showSettings = newValue
+                    }
+                }
+            }
+        )) {
             SettingsView(selectedPage: $selectedPage)
                 .environmentObject(themeEngine)
-                .font(.body)
         }
-        .sheet(isPresented: $showLoginView) {
+        .sheet(isPresented: Binding(
+            get: { showLoginView },
+            set: { newValue in
+                let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
+                if animationsEnabled {
+                    showLoginView = newValue
+                } else {
+                    withAnimation(nil) {
+                        showLoginView = newValue
+                    }
+                }
+            }
+        )) {
             LoginView(onLogin: {
-                withAnimation {
+                conditionalWithAnimation {
                     isLoggedIn = true
-                    showLoginView = false
+                    let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
+                    if animationsEnabled {
+                        showLoginView = false
+                    } else {
+                        withAnimation(nil) {
+                            showLoginView = false
+                        }
+                    }
                     Task { await webhookManager.logLogin(username: currentUsername) }
                 }
             })
             .environmentObject(themeEngine)
-            .font(.body)
         }
         .alert("Do you really want to sign out?", isPresented: $showCustomLogoutDialog) {
             Button(role: .cancel) {
-                // Cancel - do nothing
+                // Cancel
             } label: {
                 Text("Cancel")
             }
             Button(role: .destructive) {
-                withAnimation {
-                    // Save username for webhook before clearing it
+                conditionalWithAnimation {
                     let usernameToLog = currentUsername
                     isLoggedIn = false
                     currentUsername = ""
@@ -243,13 +348,10 @@ struct SideMenu: View {
         }
     }
 
-
     private func handleLink(_ linkName: String, url: URL, appURL: URL) {
         if trustUnknownLinks {
-            // Wenn trustUnknownLinks aktiviert ist, öffne direkt
             openLink(url: url, appURL: appURL)
         } else {
-            // Wenn trustUnknownLinks deaktiviert ist, zeige Bestätigungsdialog
             pendingLinkName = linkName
             pendingLinkURL = url
             pendingLinkAppURL = appURL
@@ -266,100 +368,215 @@ struct SideMenu: View {
     }
 }
 
-private struct SideMenuPrimaryButtonStyle: ButtonStyle {
-    var backgroundColor: Color
-    var foregroundColor: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(foregroundColor)
+// Modern Navigation Button
+private struct SidebarNavButton: View {
+    let icon: String
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    @EnvironmentObject var themeEngine: ThemeEngine
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            isSelected ?
+                            LinearGradient(
+                                colors: [
+                                    themeEngine.colors.accent.opacity(0.3),
+                                    themeEngine.colors.accent.opacity(0.2)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ) :
+                            LinearGradient(
+                                colors: [
+                                    Color.clear,
+                                    Color.clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isSelected ? themeEngine.colors.accent : themeEngine.colors.text.opacity(0.7))
+                }
+                
+                Text(label)
+                    .font(.system(size: 17, weight: isSelected ? .semibold : .medium))
+                    .foregroundColor(isSelected ? themeEngine.colors.text : themeEngine.colors.text.opacity(0.8))
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(backgroundColor)
-                    .opacity(configuration.isPressed ? 0.7 : 1)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .opacity(isSelected ? 0.5 : 0.3)
+                    
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        themeEngine.colors.accent.opacity(0.12),
+                                        themeEngine.colors.accent.opacity(0.06)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    }
+                }
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        isSelected ?
+                        LinearGradient(
+                            colors: [
+                                themeEngine.colors.accent.opacity(0.5),
+                                themeEngine.colors.accent.opacity(0.2)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ) :
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.15),
+                                .white.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isSelected ? 1.5 : 1
+                    )
+            )
+            .shadow(
+                color: isSelected ? themeEngine.colors.accent.opacity(0.15) : .black.opacity(0.05),
+                radius: isSelected ? 8 : 4,
+                x: 0,
+                y: isSelected ? 4 : 2
+            )
+        }
+        .buttonStyle(SidebarNavButtonStyle(isPressed: $isPressed))
     }
 }
 
-private struct SideMenuButtonView: View {
-    enum ButtonStyle {
-        case standard
-        case primary
+private struct SidebarNavButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .conditionalAnimation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, newValue in
+                isPressed = newValue
+            }
     }
+}
 
-    let label: String
+// Social Media Button
+private struct SidebarSocialButton: View {
     let icon: String
-    var style: ButtonStyle = .standard
-    var color: Color? = nil
-    var isDestructive: Bool = false
+    let label: String
     let action: () -> Void
+    
     @EnvironmentObject var themeEngine: ThemeEngine
-
+    @State private var isPressed = false
+    
     var body: some View {
-        buildButton()
-    }
-
-    @ViewBuilder
-    private func buildButton() -> some View {
-        let buttonContent = HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(foregroundColor)
-            Text(label)
-                .foregroundColor(foregroundColor)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 16)
-        .padding(.vertical, 8)
-        .background(background)
-        .cornerRadius(10)
-
-        if style == .primary {
-            Button(action: action) {
-                buttonContent
+        Button(action: action) {
+            VStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(themeEngine.colors.accent)
+                    .frame(width: 50, height: 50)
+                    .background(
+                        ZStack {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.5)
+                            
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            themeEngine.colors.accent.opacity(0.15),
+                                            themeEngine.colors.accent.opacity(0.08)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        themeEngine.colors.accent.opacity(0.4),
+                                        themeEngine.colors.accent.opacity(0.2)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .shadow(color: themeEngine.colors.accent.opacity(0.2), radius: 8, x: 0, y: 4)
+                
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(themeEngine.colors.text.opacity(0.7))
             }
-            .buttonStyle(
-                SideMenuPrimaryButtonStyle(
-                    backgroundColor: isDestructive ? themeEngine.colors.error : themeEngine.colors.accent,
-                    foregroundColor: isDestructive ? themeEngine.colors.background : themeEngine.colors.text
-                )
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.3)
             )
-            .environmentObject(themeEngine)
-        } else {
-            Button(action: action) {
-                buttonContent
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.2),
+                                .white.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(SidebarSocialButtonStyle(isPressed: $isPressed))
+    }
+}
+
+private struct SidebarSocialButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .conditionalAnimation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, newValue in
+                isPressed = newValue
             }
-            .buttonStyle(PlainButtonStyle())
-            .environmentObject(themeEngine)
-        }
-    }
-
-    private var foregroundColor: Color {
-        if let clr = color {
-            return clr
-        }
-        if isDestructive {
-            return themeEngine.colors.background
-        }
-        switch style {
-        case .primary:
-            return themeEngine.colors.text
-        case .standard:
-            return themeEngine.colors.accent
-        }
-    }
-
-    private var background: Color {
-        if isDestructive {
-            return themeEngine.colors.error.opacity(0.9)
-        }
-        switch style {
-        case .primary:
-            return themeEngine.colors.accent
-        case .standard:
-            return Color.clear
-        }
     }
 }

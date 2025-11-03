@@ -15,6 +15,6 @@ struct PrimaryButtonStyle: ButtonStyle {
             .liquidGlassButton(accentColor: backgroundColor, isPressed: configuration.isPressed)
             .foregroundColor(foregroundColor)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+            .conditionalAnimation(.easeOut(duration: 0.2), value: configuration.isPressed)
     }
 }

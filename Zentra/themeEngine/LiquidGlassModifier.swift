@@ -150,8 +150,11 @@ struct AnimatedGradientBackground: View {
         )
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                animateGradient.toggle()
+            let animationsEnabled = UserDefaults.standard.bool(forKey: "animationsEnabled")
+            if animationsEnabled {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    animateGradient.toggle()
+                }
             }
         }
     }

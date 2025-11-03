@@ -4,7 +4,7 @@ struct NebulaBackground: View {
     @EnvironmentObject var themeEngine: ThemeEngine
     
     var body: some View {
-        // Statischer Hintergrund ohne Animation
+        // Static background without animation
         themeEngine.colors.background
             .ignoresSafeArea()
     }
@@ -13,17 +13,18 @@ struct NebulaBackground: View {
 struct MainView: View {
     @Binding var selectedPage: String?
     @State private var showMenu = false
+    @AppStorage("animationsEnabled") private var animationsEnabled: Bool = true
     @EnvironmentObject var themeEngine: ThemeEngine
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                // Hintergrundfarbe immer als erste View, um komplett zu füllen
+                // Background color always as first view to fill completely
                 themeEngine.colors.background.ignoresSafeArea()
 
                 if !showMenu {
                     if selectedPage == nil || selectedPage == "start" {
-                        // Neue, einzigartige Startseiten-Animation: Partikel-Nebula
+                        // New, unique start page animation: Particle Nebula
                         ZStack {
                             NebulaBackground()
                                 .environmentObject(themeEngine)
@@ -39,20 +40,20 @@ struct MainView: View {
                             .frame(maxWidth: 510)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.3), value: showMenu)
+                        .transition(animationsEnabled ? .opacity : .identity)
+                        .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
                     } else if selectedPage == "bazaar" {
                         BazaarTrackerView()
                             .environmentObject(themeEngine)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .transition(.opacity)
-                            .animation(.easeInOut(duration: 0.3), value: showMenu)
+                            .transition(animationsEnabled ? .opacity : .identity)
+                            .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
                     } else if selectedPage == "bazaarProfit" {
                         BazaarProfitCalculatorView()
                             .environmentObject(themeEngine)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .transition(.opacity)
-                            .animation(.easeInOut(duration: 0.3), value: showMenu)
+                            .transition(animationsEnabled ? .opacity : .identity)
+                            .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
                     }
                 }
 
@@ -67,11 +68,11 @@ struct MainView: View {
                         .lineLimit(nil)
                         .foregroundColor(themeEngine.colors.text)
                         .opacity(showMenu ? 0 : 1)
-                        .animation(.easeInOut(duration: 0.2), value: showMenu)
+                        .conditionalAnimation(.easeInOut(duration: 0.2), value: showMenu)
 
                         HStack {
                             Button {
-                                withAnimation(.easeInOut(duration: 0.3)) {
+                                conditionalWithAnimation(.easeInOut(duration: 0.3)) {
                                     showMenu.toggle()
                                 }
                             } label: {
@@ -95,9 +96,9 @@ struct MainView: View {
                 .zIndex(2)
 
                 if showMenu {
-                    SideMenu(selectedPage: $selectedPage, onCollapse: { withAnimation { showMenu = false } })
-                        .frame(width: geo.size.width * 0.73)
-                        .transition(.move(edge: .leading))
+                    Sidebar(selectedPage: $selectedPage, onCollapse: { conditionalWithAnimation { showMenu = false } })
+                        .frame(width: geo.size.width * 0.78)
+                        .transition(animationsEnabled ? .move(edge: .leading) : .opacity)
                         .zIndex(3)
                 }
 
@@ -105,7 +106,7 @@ struct MainView: View {
                     Color.black.opacity(0.001)
                         .ignoresSafeArea()
                         .onTapGesture {
-                            withAnimation {
+                            conditionalWithAnimation {
                                 showMenu = false
                             }
                         }
@@ -119,7 +120,7 @@ struct MainView: View {
                         .gesture(
                             DragGesture().onEnded { value in
                                 if value.translation.width > 80 {
-                                    withAnimation {
+                                    conditionalWithAnimation {
                                         showMenu = true
                                     }
                                 }
@@ -130,13 +131,13 @@ struct MainView: View {
 
                 if showMenu {
                     Color.clear
-                        .frame(width: geo.size.width * 0.27)
-                        .offset(x: geo.size.width * 0.73)
+                        .frame(width: geo.size.width * 0.22)
+                        .offset(x: geo.size.width * 0.78)
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture().onEnded { value in
                                 if value.translation.width < -80 {
-                                    withAnimation {
+                                    conditionalWithAnimation {
                                         showMenu = false
                                     }
                                 }
@@ -147,7 +148,7 @@ struct MainView: View {
             }
             .onChange(of: selectedPage) { newPage in
                 if newPage != nil && newPage != "start" {
-                    withAnimation { showMenu = false }
+                    conditionalWithAnimation { showMenu = false }
                 }
             }
         }
@@ -262,7 +263,7 @@ struct GitHubPromoCard: View {
             .shadow(color: themeEngine.colors.accent.opacity(0.2), radius: 20, x: 0, y: 10)
             .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
             .scaleEffect(isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: isPressed)
+            .conditionalAnimation(.easeInOut(duration: 0.2), value: isPressed)
         }
         .buttonStyle(PlainButtonStyle())
         .onLongPressGesture(minimumDuration: 0) { pressing in
@@ -280,7 +281,7 @@ struct AnimatedClockView: View {
             .foregroundColor(Color.accentColor)
             .shadow(color: Color.accentColor.opacity(0.18), radius: 12, y: 4)
             .onReceive(timer) { input in
-                withAnimation(.easeInOut(duration: 0.5)) {
+                conditionalWithAnimation(.easeInOut(duration: 0.5)) {
                     currentTime = input
                 }
             }

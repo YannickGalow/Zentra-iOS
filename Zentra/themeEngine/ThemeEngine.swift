@@ -74,7 +74,7 @@ class ThemeEngine: ObservableObject {
         warning: "#FFD93D"
     )
 
-    /// Setup des Themes-Ordners: Nur das defaultTheme wird bei Bedarf automatisch angelegt.
+    /// Setup des Themes-Ordners: Alle drei Standard-Themes werden bei Bedarf automatisch angelegt.
     private func setupThemesFolderIfNeeded() {
         let fileManager = FileManager.default
         let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -90,15 +90,23 @@ class ThemeEngine: ObservableObject {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
 
-            // Nur das Default Theme wird bei Bedarf neu angelegt
-            let defaultThemeFile = themesDir.appendingPathComponent("default.json")
-            if !fileManager.fileExists(atPath: defaultThemeFile.path) {
-                let data = try encoder.encode(defaultTheme)
-                try data.write(to: defaultThemeFile)
-                print("✅ default.json erstellt.")
+            // Alle drei Standard-Themes werden bei Bedarf automatisch angelegt
+            let builtInThemes: [(ThemeModel, String)] = [
+                (defaultTheme, "default.json"),
+                (lightTheme, "light.json"),
+                (darkTheme, "dark.json")
+            ]
+            
+            for (theme, filename) in builtInThemes {
+                let themeFile = themesDir.appendingPathComponent(filename)
+                if !fileManager.fileExists(atPath: themeFile.path) {
+                    let data = try encoder.encode(theme)
+                    try data.write(to: themeFile)
+                    print("✅ \(filename) created.")
+                }
             }
 
-            // Standard-Theme setzen, falls noch nie gesetzt oder fehlerhaft
+            // Set default theme if never set or invalid
             if selectedThemeId.isEmpty || loadTheme(withId: selectedThemeId) == nil {
                 selectedThemeId = defaultTheme.id
             }
@@ -108,9 +116,65 @@ class ThemeEngine: ObservableObject {
         }
     }
 
-    /// Lädt die Metadaten (id und name) aller verfügbaren Themes ohne komplettes Decodieren
+    /// Loads metadata (id and name) of all available themes without full decoding
     func loadThemes() {
         availableThemes = []
+        
+        // Always add Built-in Themes
+        let builtInThemes = [
+            ThemeModel(
+                id: defaultTheme.id,
+                name: defaultTheme.name,
+                background: defaultTheme.background,
+                text: defaultTheme.text,
+                accent: defaultTheme.accent,
+                icon: defaultTheme.icon,
+                buttonBackground: defaultTheme.buttonBackground,
+                buttonText: defaultTheme.buttonText,
+                fieldBackground: defaultTheme.fieldBackground,
+                border: defaultTheme.border,
+                navbarBackground: defaultTheme.navbarBackground,
+                navbarText: defaultTheme.navbarText,
+                error: defaultTheme.error,
+                warning: defaultTheme.warning
+            ),
+            ThemeModel(
+                id: lightTheme.id,
+                name: lightTheme.name,
+                background: lightTheme.background,
+                text: lightTheme.text,
+                accent: lightTheme.accent,
+                icon: lightTheme.icon,
+                buttonBackground: lightTheme.buttonBackground,
+                buttonText: lightTheme.buttonText,
+                fieldBackground: lightTheme.fieldBackground,
+                border: lightTheme.border,
+                navbarBackground: lightTheme.navbarBackground,
+                navbarText: lightTheme.navbarText,
+                error: lightTheme.error,
+                warning: lightTheme.warning
+            ),
+            ThemeModel(
+                id: darkTheme.id,
+                name: darkTheme.name,
+                background: darkTheme.background,
+                text: darkTheme.text,
+                accent: darkTheme.accent,
+                icon: darkTheme.icon,
+                buttonBackground: darkTheme.buttonBackground,
+                buttonText: darkTheme.buttonText,
+                fieldBackground: darkTheme.fieldBackground,
+                border: darkTheme.border,
+                navbarBackground: darkTheme.navbarBackground,
+                navbarText: darkTheme.navbarText,
+                error: darkTheme.error,
+                warning: darkTheme.warning
+            )
+        ]
+        
+        // Built-in Theme IDs for duplicate check
+        let builtInThemeIds = Set(builtInThemes.map { $0.id })
+        availableThemes.append(contentsOf: builtInThemes)
 
         let fileManager = FileManager.default
         let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -121,39 +185,42 @@ class ThemeEngine: ObservableObject {
             for file in files where file.pathExtension == "json" {
                 do {
                     let data = try Data(contentsOf: file)
-                    // Versuche nur id und name zu lesen, ohne alles zu decodieren
+                    // Try to read only id and name without decoding everything
                     if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let id = jsonObject["id"] as? String,
                        let name = jsonObject["name"] as? String {
-                        let themeModel = ThemeModel(
-                            id: id,
-                            name: name,
-                            background: "",
-                            text: "",
-                            accent: "",
-                            icon: "",
-                            buttonBackground: "",
-                            buttonText: "",
-                            fieldBackground: "",
-                            border: "",
-                            navbarBackground: "",
-                            navbarText: "",
-                            error: "",
-                            warning: ""
-                        )
-                        availableThemes.append(themeModel)
-                        print("✅ Theme-Metadaten geladen: \(name)")
+                        // Skip Built-in Themes, as they are already added
+                        if !builtInThemeIds.contains(id) {
+                            let themeModel = ThemeModel(
+                                id: id,
+                                name: name,
+                                background: "",
+                                text: "",
+                                accent: "",
+                                icon: "",
+                                buttonBackground: "",
+                                buttonText: "",
+                                fieldBackground: "",
+                                border: "",
+                                navbarBackground: "",
+                                navbarText: "",
+                                error: "",
+                                warning: ""
+                            )
+                            availableThemes.append(themeModel)
+                            print("✅ Theme metadata loaded: \(name)")
+                        }
                     } else {
-                        print("❌ Fehlende id oder name im Theme: \(file.lastPathComponent)")
+                        print("❌ Missing id or name in theme: \(file.lastPathComponent)")
                     }
                 } catch {
-                    print("❌ Fehler beim Lesen der Theme-Metadaten: \(file.lastPathComponent) - \(error)")
+                    print("❌ Error reading theme metadata: \(file.lastPathComponent) - \(error)")
                 }
             }
 
-            // Fallback, falls kein Theme gefunden wurde
+            // Fallback if no theme was found (should not happen, as Built-in Themes are always present)
             if availableThemes.isEmpty {
-                // Nur id und name der Default-Themes
+                // Only id and name of Default Themes
                 availableThemes = [
                     ThemeModel(
                         id: defaultTheme.id,
@@ -217,7 +284,7 @@ class ThemeEngine: ObservableObject {
             }
 
         } catch {
-            print("⚠️ Fehler beim Lesen des Themes-Ordners: \(error)")
+            print("⚠️ Error reading themes folder: \(error)")
             availableThemes = [
                 ThemeModel(
                     id: defaultTheme.id,
@@ -286,11 +353,11 @@ class ThemeEngine: ObservableObject {
                 let theme = try JSONDecoder().decode(ThemeModel.self, from: data)
                 return theme
             } catch {
-                print("❌ Fehler beim Laden des Themes '\(id)': \(error)")
+                print("❌ Error loading theme '\(id)': \(error)")
                 return nil
             }
         } else {
-            // Fallback für default, light, dark, falls Datei nicht existiert
+            // Fallback for default, light, dark, if file does not exist
             switch id {
             case defaultTheme.id:
                 return defaultTheme
@@ -317,12 +384,12 @@ class ThemeEngine: ObservableObject {
         let description: String
         
         if isSetupMessage {
-            title = "🎨 Theme erstellt"
-            description = "Das Theme **\(themeName)** wurde erfolgreich eingerichtet und ist jetzt verfügbar."
+            title = "🎨 Theme Created"
+            description = "The theme **\(themeName)** has been successfully set up and is now available."
             footerText = "✨ Zentra App Logging • \(formattedCurrentDateTime())"
         } else {
-            title = "🎨 Theme geändert"
-            description = "Das Theme wurde geändert auf **\(themeName)**."
+            title = "🎨 Theme Changed"
+            description = "The theme has been changed to **\(themeName)**."
             footerText = "✨ Zentra App Logging • \(formattedCurrentDateTime())"
         }
         

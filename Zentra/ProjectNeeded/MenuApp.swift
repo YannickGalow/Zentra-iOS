@@ -55,7 +55,7 @@ struct MenuApp: App {
                     VStack {
                         MainView(selectedPage: $selectedPage)
                             .environmentObject(discordWebhookManager)
-                            .transition(.opacity)
+                            .transition(.identity)
                     }
                     .environmentObject(themeEngine)
                     .environmentObject(discordWebhookManager)
@@ -95,7 +95,7 @@ struct MenuApp: App {
                 
                 UNUserNotificationCenter.current().delegate = pushDelegate
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-                    print("Push-Berechtigung: \(granted), Fehler: \(String(describing: error))")
+                    print("Push permission: \(granted), Error: \(String(describing: error))")
                     DispatchQueue.main.async {
                         UIApplication.shared.registerForRemoteNotifications()
                     }
