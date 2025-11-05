@@ -130,10 +130,11 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 4. Changes apply immediately with visual feedback
 
 **Importing Custom Themes**:
-1. Prepare a theme JSON file (see developer section for format)
+1. Prepare a `.gtheme` file (see developer section for format)
 2. Go to **Settings** → **Design** → **Upload theme**
-3. Select your JSON file
-4. The theme will be imported and activated
+3. Select your `.gtheme` file
+4. If the theme is password-protected, enter the password when prompted
+5. The theme will be imported and activated automatically
 
 **Managing Themes**:
 - Delete custom themes by tapping the trash icon
@@ -169,9 +170,11 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - Note: Discord settings only appear when a valid webhook URL is entered
 
 **Themes not loading**
-- Check that theme JSON files are properly formatted
-- Ensure file extension is `.json`
+- Check that theme files use the `.gtheme` extension
+- Ensure file is not corrupted or renamed (e.g., from `.txt`)
+- For encrypted themes, verify the password is correct
 - Try restarting the app
+- Check console logs for specific error messages
 
 **Login issues**
 - Login is optional - app works without authentication
@@ -268,47 +271,57 @@ Zentra/
 
 ### Key Components Deep Dive
 
-#### Theme Engine System
+#### Theme Controlling Framework (TCF)
 
-The `ThemeEngine` class is the heart of the theming system:
+The `ThemeControllingFramework` (TCF) class is the heart of the theming system:
 
 **Features**:
-- Loads themes from JSON files in `Documents/themes/`
+- Loads themes from `.gtheme` files in `Documents/themes/`
 - Provides three default themes (Liquid Glass variants)
+- Password encryption/decryption support
+- Device default adaptation (automatic light/dark mode)
+- File extension validation (`.gtheme` only)
+- Corruption detection for renamed files
 - Handles theme persistence using `@AppStorage`
-- Sends Discord notifications on theme changes
-- Lazy loading of theme data
+- Individual color definitions with opacity control
+- Version tracking and metadata
 
-**Theme File Structure** (`Documents/themes/{themeId}.json`):
+**Theme File Structure** (`Documents/themes/{themeId}.gtheme`):
 ```json
 {
   "id": "custom-theme",
   "name": "My Custom Theme",
-  "background": "#0A0E27",
-  "text": "#FFFFFF",
-  "accent": "#5B8DEF",
-  "icon": "#FFFFFF",
-  "buttonBackground": "#5B8DEF",
-  "buttonText": "#FFFFFF",
-  "fieldBackground": "#1A1F3A",
-  "border": "#2A3F5F",
-  "navbarBackground": "#0A0E27",
-  "navbarText": "#FFFFFF",
-  "error": "#FF6B6B",
-  "warning": "#FFD93D"
+  "version": "1.0",
+  "isEncrypted": false,
+  "background": {
+    "hex": "#0A0E27",
+    "opacity": 1.0
+  },
+  "text": {
+    "hex": "#FFFFFF",
+    "opacity": 1.0
+  },
+  "accent": {
+    "hex": "#5B8DEF",
+    "opacity": 1.0
+  },
+  "adaptsToDeviceDefaults": true,
+  "deviceDefaultBase": null
 }
 ```
 
 **Usage Example**:
 ```swift
-@EnvironmentObject var themeEngine: ThemeEngine
+@EnvironmentObject var tcf: TCF
 
 var body: some View {
     Text("Hello")
-        .foregroundColor(themeEngine.colors.text)
-        .background(themeEngine.colors.background)
+        .foregroundColor(tcf.colors.text)
+        .background(tcf.colors.background)
 }
 ```
+
+**Note**: `ThemeEngine` is deprecated - use `TCF` directly for new code.
 
 #### Liquid Glass Design System
 
@@ -542,7 +555,7 @@ struct MyView: View {
 1. **Create View Component**:
    ```swift
    struct NewFeatureView: View {
-       @EnvironmentObject var themeEngine: ThemeEngine
+       @EnvironmentObject var tcf: TCF
        
        var body: some View {
            VStack {
@@ -558,23 +571,28 @@ struct MyView: View {
    ```swift
    } else if selectedPage == "newFeature" {
        NewFeatureView()
-           .environmentObject(themeEngine)
+           .environmentObject(tcf)
    }
    ```
 
 3. **Add Menu Item**:
    - Update `SideMenu.swift`:
    ```swift
-   SideMenuButtonView(label: "New Feature", icon: "star.fill", style: .primary) {
+   SidebarNavButton(
+       icon: "star.fill",
+       label: "New Feature",
+       isSelected: selectedPage == "newFeature"
+   ) {
        selectedPage = "newFeature"
        onCollapse?()
    }
    ```
 
 4. **Theme Support**:
-   - Always use `themeEngine.colors.*` for colors
+   - Always use `tcf.colors.*` for colors
    - Apply liquid glass modifiers for consistency
    - Test with all theme variants
+   - Use `conditionalWithAnimation` for animations that respect user preferences
 
 #### State Management Patterns
 
@@ -586,7 +604,7 @@ struct MyView: View {
 
 **Shared State** (`@EnvironmentObject`):
 ```swift
-@EnvironmentObject var themeEngine: ThemeEngine
+@EnvironmentObject var tcf: TCF
 @EnvironmentObject var webhookManager: DiscordWebhookManager
 ```
 
@@ -650,8 +668,10 @@ SomeView(selectedPage: $selectedPage)
    - Should be replaced with proper auth system
 
 3. **Theme File Management**:
-   - No validation for malformed JSON
-   - Should add error handling for invalid theme files
+   - File extension validation implemented (`.gtheme` only)
+   - Corruption detection for renamed files
+   - Password encryption/decryption implemented
+   - JSON validation added for theme structure
 
 ### Build Process
 
@@ -785,15 +805,12 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 #### External API Integration
 
 **Endpoints Used**:
-- Bazaar data endpoint
-- Item information endpoint
-- Price history endpoint
+- *Bazaar features removed - API integration currently disabled*
 
 **Implementation Notes**:
-- Async/await pattern
+- Async/await pattern (used in Discord integration)
 - Error handling with retries
-- Caching for performance
-- Background refresh support
+- Background refresh support (prepared for future features)
 
 ### Dependencies
 
@@ -803,7 +820,9 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - UIKit: Legacy UI components (for specific features)
 - LocalAuthentication: Biometric authentication
 - UserNotifications: Push notifications
-- UniformTypeIdentifiers: File type handling
+- UniformTypeIdentifiers: File type handling (`.gtheme` file import)
+- CryptoKit: Theme encryption/decryption (AES-GCM)
+- Darwin: System information utilities
 
 **External Dependencies**:
 - None currently (pure SwiftUI implementation)
@@ -829,9 +848,12 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 
 **Theme Not Loading**:
 - Check `Documents/themes/` directory exists
-- Verify JSON file format
-- Check console for decoding errors
+- Verify `.gtheme` file format (not `.json` or renamed files)
+- Check file extension is `.gtheme` (lowercase)
+- For encrypted themes, verify password is correct
+- Check console for decoding/decryption errors
 - Verify file permissions
+- Check for file corruption (renamed files are rejected)
 
 **Discord Webhook Issues**:
 - Test webhook URL manually
