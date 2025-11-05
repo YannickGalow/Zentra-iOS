@@ -36,7 +36,7 @@ struct MenuApp: App {
 
     @UIApplicationDelegateAdaptor(PushNotificationDelegate.self) var pushDelegate
     
-    @StateObject var themeEngine = ThemeEngine()
+    @StateObject var tcf = TCF()
     @StateObject var discordWebhookManager = DiscordWebhookManager()
 
     @State private var selectedPage: String? = nil
@@ -57,7 +57,7 @@ struct MenuApp: App {
                             .environmentObject(discordWebhookManager)
                             .transition(.identity)
                     }
-                    .environmentObject(themeEngine)
+                    .environmentObject(tcf)
                     .environmentObject(discordWebhookManager)
                 } else {
                     Color.black.opacity(0.9)
@@ -75,7 +75,7 @@ struct MenuApp: App {
                         )
                 }
             }
-            .environmentObject(themeEngine)
+            .environmentObject(tcf)
             .environmentObject(discordWebhookManager)
             .onAppear {
                 authenticateIfNeeded()

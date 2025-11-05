@@ -24,5 +24,5 @@ struct BazaarProfitCalculatorView: View {
 }
 
 #Preview {
-    BazaarProfitCalculatorView().environmentObject(ThemeEngine())
+        BazaarProfitCalculatorView().environmentObject(ThemeEngine())
 }

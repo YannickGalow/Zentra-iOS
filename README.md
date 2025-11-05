@@ -12,28 +12,40 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 
 ### Key Features
 
-#### 🔧 Features (Under Development)
-- **Bazaar Tracker**: Track and monitor prices in real-time
-- **Bazaar Profit Calculator**: Calculate potential profits from trading opportunities
-- **Price Alerts**: Set up alerts for specific item prices
-- **Saved Items**: Save frequently tracked items for quick access
+#### 🔧 Features (Status)
+- **Bazaar Tracker**: *Removed - buttons remain in sidebar but disabled*
+- **Bazaar Profit Calculator**: *Removed - buttons remain in sidebar but disabled*
 
-*Note: These features are currently included but the app's primary purpose is yet to be determined.*
+*Note: These features have been removed. Navigation buttons remain visible but non-functional. The app's primary purpose is yet to be determined.*
 
-#### 🎨 Theming System
+#### 🎨 Theming System (TCF - Theme Controlling Framework)
 - **Pre-installed Themes**:
   - Liquid Glass (Default): Deep blue with glassmorphism effects
   - Liquid Glass Light: Light variant with softer colors  
   - Liquid Glass Dark: Dark variant with enhanced contrast
-- **Custom Themes**: Import your own theme configurations via JSON files
+- **Custom Themes**: Import your own theme configurations via `.gtheme` files
+- **Password Protection**: Encrypt themes with passwords for privacy
+- **File Format**: Advanced `.gtheme` format with individual color definitions
+- **Device Adaptation**: Themes can automatically adapt to device light/dark mode
 - **Instant Switching**: Change themes with real-time preview
 - **Loading Animation**: Visual feedback when switching themes
 - **Beautiful Design**: Liquid glass aesthetics with smooth animations
+- **File Validation**: Only `.gtheme` files are accepted - renamed files are rejected
 
-#### ⚙️ Performance Settings
-- **Animation Control**: Toggle app-wide animations on/off
-- **Smooth Performance**: Disable animations for better performance on older devices
-- **Instant Actions**: When disabled, all actions happen instantly without delays
+#### 🔧 Developer Options (Hidden)
+- **Hidden by Default**: Developer options are hidden and must be activated
+- **Activation**: Tap the profile avatar/logo **5 times** (only when logged in)
+- **Visual Feedback**: Haptic feedback and temporary toast notification on activation
+- **Performance Settings**:
+  - Animation Control: Toggle app-wide animations on/off
+  - Smooth Performance: Disable animations for better performance on older devices
+  - Instant Actions: When disabled, all actions happen instantly without delays
+- **Developer Information**:
+  - App version and build number
+  - TCF (Theme Controlling Framework) version
+  - Bundle identifier
+  - Device information (iOS version, model, name)
+  - All developer-relevant details in one place
 
 #### 🔐 Security Features
 - **Face ID / Touch ID**: Biometric authentication support
@@ -66,8 +78,8 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
    - Or tap the **menu icon** (☰) in the top-left corner
    - Navigate between:
      - **Home**: Main dashboard with animated background
-     - **Bazaar Tracker**: Monitor item prices (feature in development)
-     - **Bazaar Profit**: Calculate trading profits (feature in development)
+     - **Bazaar Tracker**: *Currently disabled - feature removed*
+     - **Bazaar Profit**: *Currently disabled - feature removed*
      - **Settings**: Configure app preferences
 
 3. **Login** (Optional):
@@ -81,15 +93,16 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
    - Enable "Face ID / Passcode" for added security
    - Once logged in, you'll see your username and can sign out from the Profile section
 
-#### Using Bazaar Tracker
+#### Activating Developer Options
 
-*Note: This feature is currently included but the app's primary purpose is yet to be determined.*
+1. **Log in** to your account (required)
+2. Open the **side menu**
+3. **Tap the profile avatar/logo 5 times** (within 2 seconds)
+4. You'll feel haptic feedback and see a toast notification
+5. Developer Options will now appear in **Settings**
+6. Repeat the process to hide Developer Options again
 
-1. Open the side menu
-2. Select "Bazaar Tracker"
-3. Search for items or browse saved items
-4. Set price alerts by tapping on item details
-5. Save frequently used items for quick access
+*Note: Developer Options include performance settings and developer information.*
 
 #### Setting Up Discord Webhooks
 
@@ -205,11 +218,14 @@ Zentra/
 │   ├── SettingsView.swift      # Settings and configuration UI
 │   └── SideMenu.swift          # Navigation sidebar component
 │
-├── themeEngine/                # Theming system
-│   ├── ThemeEngine.swift       # Core theme management
-│   ├── ThemeModel.swift        # Theme data model (Codable)
+├── themeEngine/                # Theme Controlling Framework (TCF)
+│   ├── ThemeEngine.swift       # TCF type alias (backward compatibility)
+│   ├── ThemeControllingFramework.swift  # Core TCF implementation
+│   ├── TCFThemeModel.swift     # Enhanced theme model with encryption
+│   ├── ThemeModel.swift        # Legacy theme model (deprecated)
 │   ├── ThemeColors.swift       # Color definitions structure
 │   ├── Theme.swift             # Theme enumeration
+│   ├── ThemePasswordView.swift # Password input for encrypted themes
 │   ├── LiquidGlassModifier.swift  # Glassmorphism view modifiers
 │   └── Color+Hex.swift         # Color hex conversion utilities
 │
@@ -700,33 +716,50 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - Settings interface displayed as sheet
 - Theme picker with selection list and loading animation
 - Discord Integration Settings (conditional display)
-- Performance Settings (animation toggle)
+- Developer Options (hidden by default, activated via logo tap)
+  - Performance Settings (animation toggle)
+  - Developer Information display
 - Privacy/security toggles
-- Theme import/export
+- Theme import/export with `.gtheme` validation
 - Custom Discord message support
+- File corruption detection for renamed theme files
 
 **SideMenu.swift**:
 - Slide-out navigation menu
 - User profile display with login status
 - Login button when not authenticated
 - Sign out button in profile section when logged in
-- Quick navigation buttons
+- Quick navigation buttons (Bazaar features disabled)
 - Social links (Contact section)
+- Developer Options activation (5-tap gesture on profile avatar)
+- Toast notifications for Developer Options toggle
 
-#### Theme System
+#### Theme System (TCF - Theme Controlling Framework)
+
+**ThemeControllingFramework.swift**:
+- Core theme management class (replaces ThemeEngine)
+- `.gtheme` file format support
+- Password encryption/decryption for themes
+- Device default adaptation
+- File extension validation (`.gtheme` only)
+- Corruption detection for renamed files
+- Built-in theme management
+
+**TCFThemeModel.swift**:
+- Enhanced theme model with individual color definitions
+- Encryption metadata support
+- Password hash storage
+- Device adaptation properties
+- Version tracking
+- Individual color opacity control
 
 **ThemeEngine.swift**:
-- Singleton pattern for theme management
-- File I/O for theme persistence
-- Default theme initialization
-- Theme metadata loading
-- Discord integration for theme changes
+- Type alias for ThemeControllingFramework (backward compatibility)
+- Deprecated - use TCF directly
 
-**ThemeModel.swift**:
-- Codable structure for JSON serialization
-- Color property definitions
-- Theme validation
-- Conversion to `ThemeColors` structure
+**ThemePasswordView.swift**:
+- Password input interface for encrypted themes
+- Secure password entry with confirmation
 
 **LiquidGlassModifier.swift**:
 - Custom view modifiers
@@ -735,21 +768,17 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 - Shadow and blur effects
 - Reusable design components
 
-#### Feature Integration (Purpose TBD)
+#### Feature Integration (Status)
 
 **BazaarTrackerView.swift**:
-- Real-time API integration
-- Item search functionality
-- Price tracking and alerts
-- Saved items management
-- Error handling and retry logic
+- *Currently disabled - views removed*
+- Buttons remain in sidebar but non-functional
 
 **BazaarProfitCalculatorView.swift**:
-- Profit calculation algorithms
-- Market analysis
-- (Currently placeholder - to be implemented)
+- *Currently disabled - views removed*
+- Buttons remain in sidebar but non-functional
 
-*Note: These features are included but the app's primary purpose is yet to be determined.*
+*Note: These features have been removed from the app. Navigation buttons remain visible but disabled for future use.*
 
 ### API Integration
 
@@ -880,19 +909,24 @@ This project is for development and testing purposes.
 ### Version 1.0 (Current)
 - Initial release
 - Liquid glass design system
-- Basic feature integrations (purpose TBD)
+- **TCF (Theme Controlling Framework)** - Complete migration from ThemeEngine
+- **Password-protected themes** - Encrypt themes with passwords
+- **`.gtheme` file format** - Advanced theme format with individual color definitions
+- **File validation** - Only `.gtheme` files accepted, corruption detection for renamed files
+- **Developer Options** - Hidden settings activated by 5-tap gesture on profile avatar
+  - Performance Settings (animation toggle)
+  - Developer Information display (app version, TCF version, device info)
 - Discord Integration Settings with conditional display
 - Custom Discord message support
-- App-wide animation toggle (Performance Settings)
 - Theme loading animation
 - Improved Discord embed design (English, icons, colors)
-- Theme system implementation
 - Optional authentication (app starts without login requirement)
 - Login integrated in side menu
 - Debug login button for development
 - Navigation menu with profile section
 - Complete English localization (translated from German)
 - Enhanced animation controls throughout the app
+- **Bazaar features removed** - Views removed, buttons remain but disabled
 - *Note: App purpose and identity are yet to be determined*
 
 ---

@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct NebulaBackground: View {
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     
     var body: some View {
         // Static background without animation
-        themeEngine.colors.background
+        tcf.colors.background
             .ignoresSafeArea()
     }
 }
@@ -14,25 +14,25 @@ struct MainView: View {
     @Binding var selectedPage: String?
     @State private var showMenu = false
     @AppStorage("animationsEnabled") private var animationsEnabled: Bool = true
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 // Background color always as first view to fill completely
-                themeEngine.colors.background.ignoresSafeArea()
+                tcf.colors.background.ignoresSafeArea()
 
                 if !showMenu {
                     if selectedPage == nil || selectedPage == "start" {
                         // New, unique start page animation: Particle Nebula
                         ZStack {
                             NebulaBackground()
-                                .environmentObject(themeEngine)
+                                .environmentObject(tcf)
                             VStack(spacing: 24) {
                                 Spacer(minLength: 56)
                                 
                                 GitHubPromoCard()
-                                    .environmentObject(themeEngine)
+                                    .environmentObject(tcf)
                                     .padding(.horizontal, 24)
                                 
                                 Spacer()
@@ -42,31 +42,19 @@ struct MainView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .transition(animationsEnabled ? .opacity : .identity)
                         .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
-                    } else if selectedPage == "bazaar" {
-                        BazaarTrackerView()
-                            .environmentObject(themeEngine)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .transition(animationsEnabled ? .opacity : .identity)
-                            .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
-                    } else if selectedPage == "bazaarProfit" {
-                        BazaarProfitCalculatorView()
-                            .environmentObject(themeEngine)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .transition(animationsEnabled ? .opacity : .identity)
-                            .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
+                    } else if selectedPage == "bazaar" || selectedPage == "bazaarProfit" {
+                        // Views removed - functionality disabled
+                        EmptyView()
                     }
                 }
 
                 VStack {
                     ZStack {
-                        Text(
-                            selectedPage == "bazaar" ? "Bazaar Tracker" :
-                            (selectedPage == "bazaarProfit" ? "Bazaar Profit\nCalculator" : "Home")
-                        )
+                        Text("Home")
                         .font(.system(size: 32, weight: .bold))
                         .multilineTextAlignment(.center)
                         .lineLimit(nil)
-                        .foregroundColor(themeEngine.colors.text)
+                        .foregroundColor(tcf.colors.text)
                         .opacity(showMenu ? 0 : 1)
                         .conditionalAnimation(.easeInOut(duration: 0.2), value: showMenu)
 
@@ -78,7 +66,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "sidebar.squares.leading")
                                     .font(.title)
-                                    .foregroundColor(themeEngine.colors.text)
+                                    .foregroundColor(tcf.colors.text)
                                     .padding()
                                     .background(
                                         Circle()
@@ -156,7 +144,7 @@ struct MainView: View {
 }
 
 struct GitHubPromoCard: View {
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @State private var isPressed = false
     
     var body: some View {
@@ -172,23 +160,23 @@ struct GitHubPromoCard: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                themeEngine.colors.accent,
-                                themeEngine.colors.accent.opacity(0.7)
+                                tcf.colors.accent,
+                                tcf.colors.accent.opacity(0.7)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: themeEngine.colors.accent.opacity(0.5), radius: 12, y: 4)
+                    .shadow(color: tcf.colors.accent.opacity(0.5), radius: 12, y: 4)
                 
                 VStack(spacing: 12) {
                     Text("Star us on GitHub")
                         .font(.title2.bold())
-                        .foregroundColor(themeEngine.colors.text)
+                        .foregroundColor(tcf.colors.text)
                     
                     Text("Check out the source code and contribute to Zentra")
                         .font(.subheadline)
-                        .foregroundColor(themeEngine.colors.text.opacity(0.7))
+                        .foregroundColor(tcf.colors.text.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                     
@@ -196,18 +184,18 @@ struct GitHubPromoCard: View {
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .font(.caption)
-                                .foregroundColor(themeEngine.colors.accent)
+                                .foregroundColor(tcf.colors.accent)
                             Text("GitHub")
                                 .font(.caption.bold())
-                                .foregroundColor(themeEngine.colors.text)
+                                .foregroundColor(tcf.colors.text)
                         }
                         
                         Text("•")
-                            .foregroundColor(themeEngine.colors.text.opacity(0.4))
+                            .foregroundColor(tcf.colors.text.opacity(0.4))
                         
                         Text("YannickGalow/Zentra-iOS")
                             .font(.caption)
-                            .foregroundColor(themeEngine.colors.text.opacity(0.8))
+                            .foregroundColor(tcf.colors.text.opacity(0.8))
                     }
                     .padding(.top, 4)
                 }
@@ -224,9 +212,9 @@ struct GitHubPromoCard: View {
                     // Accent Gradient Overlay
                     LinearGradient(
                         colors: [
-                            themeEngine.colors.accent.opacity(0.15),
-                            themeEngine.colors.accent.opacity(0.05),
-                            themeEngine.colors.accent.opacity(0.1)
+                            tcf.colors.accent.opacity(0.15),
+                            tcf.colors.accent.opacity(0.05),
+                            tcf.colors.accent.opacity(0.1)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -251,7 +239,7 @@ struct GitHubPromoCard: View {
                         LinearGradient(
                             colors: [
                                 .white.opacity(0.5),
-                                themeEngine.colors.accent.opacity(0.6),
+                                tcf.colors.accent.opacity(0.6),
                                 .white.opacity(0.2)
                             ],
                             startPoint: .topLeading,
@@ -260,7 +248,7 @@ struct GitHubPromoCard: View {
                         lineWidth: 1.5
                     )
             )
-            .shadow(color: themeEngine.colors.accent.opacity(0.2), radius: 20, x: 0, y: 10)
+            .shadow(color: tcf.colors.accent.opacity(0.2), radius: 20, x: 0, y: 10)
             .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
             .scaleEffect(isPressed ? 0.97 : 1.0)
             .conditionalAnimation(.easeInOut(duration: 0.2), value: isPressed)

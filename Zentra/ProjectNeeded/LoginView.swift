@@ -16,14 +16,14 @@ struct LoginView: View {
 
     @State private var showSavePasswordPrompt = false
 
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
 
     private let keychainService = "com.example.LoginApp"
 
     var body: some View {
         ZStack {
             // Simple static background
-            themeEngine.colors.background.ignoresSafeArea()
+            tcf.colors.background.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 20) {
@@ -32,10 +32,10 @@ struct LoginView: View {
                     VStack(spacing: 8) {
                         Text("Debugger Version")
                             .font(.title2)
-                            .foregroundColor(themeEngine.colors.text.opacity(0.8))
+                            .foregroundColor(tcf.colors.text.opacity(0.8))
                         Text("Login")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(themeEngine.colors.text)
+                            .foregroundColor(tcf.colors.text)
                     }
                     .padding(.bottom, 8)
 
@@ -56,9 +56,9 @@ struct LoginView: View {
                                         .fill(
                                             LinearGradient(
                                                 colors: [
-                                                    themeEngine.colors.accent.opacity(0.25),
-                                                    themeEngine.colors.accent.opacity(0.1),
-                                                    themeEngine.colors.accent.opacity(0.15)
+                                                    tcf.colors.accent.opacity(0.25),
+                                                    tcf.colors.accent.opacity(0.1),
+                                                    tcf.colors.accent.opacity(0.15)
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
@@ -79,7 +79,7 @@ struct LoginView: View {
                                 }
                             )
                             .foregroundColor(.white.opacity(0.95))
-                            .accentColor(themeEngine.colors.accent)
+                            .accentColor(tcf.colors.accent)
                             .submitLabel(.next)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
@@ -87,7 +87,7 @@ struct LoginView: View {
                                         LinearGradient(
                                             colors: [
                                                 .white.opacity(0.5),
-                                                themeEngine.colors.accent.opacity(0.6),
+                                                tcf.colors.accent.opacity(0.6),
                                                 .white.opacity(0.2)
                                             ],
                                             startPoint: .topLeading,
@@ -96,7 +96,7 @@ struct LoginView: View {
                                         lineWidth: 1.5
                                     )
                             )
-                            .shadow(color: themeEngine.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .shadow(color: tcf.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
 
                         HStack(spacing: 12) {
@@ -114,11 +114,11 @@ struct LoginView: View {
                             .submitLabel(.done)
                             .onSubmit { performLogin() }
                             .frame(maxWidth: .infinity)
-                            .accentColor(themeEngine.colors.accent)
+                            .accentColor(tcf.colors.accent)
 
                             Button(action: { showPassword.toggle() }) {
                                 Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                                    .foregroundColor(themeEngine.colors.accent)
+                                    .foregroundColor(tcf.colors.accent)
                                     .padding(8)
                                     .background(
                                         Circle()
@@ -140,9 +140,9 @@ struct LoginView: View {
                                     .fill(
                                         LinearGradient(
                                             colors: [
-                                                themeEngine.colors.accent.opacity(0.25),
-                                                themeEngine.colors.accent.opacity(0.1),
-                                                themeEngine.colors.accent.opacity(0.15)
+                                                tcf.colors.accent.opacity(0.25),
+                                                tcf.colors.accent.opacity(0.1),
+                                                tcf.colors.accent.opacity(0.15)
                                             ],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
@@ -168,7 +168,7 @@ struct LoginView: View {
                                     LinearGradient(
                                         colors: [
                                             .white.opacity(0.5),
-                                            themeEngine.colors.accent.opacity(0.6),
+                                            tcf.colors.accent.opacity(0.6),
                                             .white.opacity(0.2)
                                         ],
                                         startPoint: .topLeading,
@@ -177,19 +177,19 @@ struct LoginView: View {
                                     lineWidth: 1.5
                                 )
                         )
-                        .shadow(color: themeEngine.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                        .shadow(color: tcf.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                         .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
                     }
 
                     VStack(spacing: 12) {
                         Toggle("Remember login", isOn: $rememberLogin)
-                            .toggleStyle(SwitchToggleStyle(tint: themeEngine.colors.accent))
-                            .foregroundColor(themeEngine.colors.text)
+                            .toggleStyle(SwitchToggleStyle(tint: tcf.colors.accent))
+                            .foregroundColor(tcf.colors.text)
                             .font(.subheadline)
 
                         Toggle("Enable Face ID / Passcode", isOn: $useBiometrics)
-                            .toggleStyle(SwitchToggleStyle(tint: themeEngine.colors.accent))
-                            .foregroundColor(themeEngine.colors.text)
+                            .toggleStyle(SwitchToggleStyle(tint: tcf.colors.accent))
+                            .foregroundColor(tcf.colors.text)
                             .font(.subheadline)
                     }
                     .padding(.vertical, 4)
@@ -198,16 +198,16 @@ struct LoginView: View {
                     if showError {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(themeEngine.colors.error)
+                                .foregroundColor(tcf.colors.error)
                             Text("Wrong username or password")
-                                .foregroundColor(themeEngine.colors.error)
+                                .foregroundColor(tcf.colors.error)
                         }
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(themeEngine.colors.error.opacity(0.15))
+                                .fill(tcf.colors.error.opacity(0.15))
                         )
                         .padding(.top, 8)
                     }
@@ -222,7 +222,7 @@ struct LoginView: View {
                                 .frame(height: 50)
                         }
                         .buttonStyle(LoginButtonStyle(
-                            backgroundColor: themeEngine.colors.accent,
+                            backgroundColor: tcf.colors.accent,
                             foregroundColor: .white
                         ))
 
@@ -234,7 +234,7 @@ struct LoginView: View {
                                 .frame(width: 50, height: 50)
                         }
                         .buttonStyle(LoginButtonStyle(
-                            backgroundColor: themeEngine.colors.accent.opacity(0.75),
+                            backgroundColor: tcf.colors.accent.opacity(0.75),
                             foregroundColor: .white
                         ))
                     }

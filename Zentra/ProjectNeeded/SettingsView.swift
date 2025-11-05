@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 import UserNotifications
+import Darwin
 
 struct SettingsView: View {
     @AppStorage("rememberLogin") var rememberLogin: Bool = false
@@ -16,13 +17,17 @@ struct SettingsView: View {
     @State private var selectedLanguage: String = AppLanguage.system.rawValue
     @Binding var selectedPage: String?
     @State private var showDeleteConfirmation: Bool = false
-    @State private var themeToDelete: ThemeModel?
+    @State private var themeToDelete: TCFThemeModel? = nil
     @State private var showingImporter: Bool = false
     @State private var isChangingTheme: Bool = false
     @State private var customDiscordMessage: String = ""
+    @State private var showPasswordPrompt: Bool = false
+    @State private var themePassword: String = ""
+    @State private var pendingThemeURL: URL? = nil
+    @State private var showDeveloperInfo: Bool = false
     
     @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @EnvironmentObject var webhookManager: DiscordWebhookManager
     
     var body: some View {
@@ -32,7 +37,7 @@ struct SettingsView: View {
                     VStack(spacing: 24) {
                         Text("Settings")
                             .font(.largeTitle.bold())
-                            .foregroundColor(themeEngine.colors.accent)
+                            .foregroundColor(tcf.colors.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 24)
 
@@ -44,7 +49,9 @@ struct SettingsView: View {
 
                         designCard
                     
-                    appSettingsCard
+                    if UserDefaults.standard.bool(forKey: "developerOptionsEnabled") {
+                        developerOptionsCard
+                    }
 
                     Button("Send Test Notification") {
                         triggerTestNotification()
@@ -53,14 +60,14 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .padding(.horizontal, 24)
-                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: .white))
+                    .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .white))
                     .padding(.top, 24)
                     
                     Spacer(minLength: 20)
                     
                     Text("© 2025 Yannick Galow")
                         .font(.footnote)
-                        .foregroundColor(themeEngine.colors.text.opacity(0.6))
+                        .foregroundColor(tcf.colors.text.opacity(0.6))
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.bottom, 16)
                 }
@@ -69,12 +76,12 @@ struct SettingsView: View {
                 .opacity(isChangingTheme ? (animationsEnabled ? 0.3 : 0.5) : 1.0)
                 .blur(radius: isChangingTheme ? (animationsEnabled ? 3 : 0) : 0)
             }
-            .background(themeEngine.colors.background.ignoresSafeArea())
+            .background(tcf.colors.background.ignoresSafeArea())
             
             // Loading animation during theme change
             if isChangingTheme {
                 ThemeLoadingView()
-                    .environmentObject(themeEngine)
+                    .environmentObject(tcf)
                     .transition(animationsEnabled ? .opacity : .identity)
             }
             }
@@ -91,7 +98,7 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
                 }
             }
             .alert(isPresented: $showDeleteConfirmation) {
@@ -106,18 +113,44 @@ struct SettingsView: View {
                                     await webhookManager.logThemeChange(themeName: theme.name)
                                 }
                             }
+                            themeToDelete = nil
                         }
                     },
-                    secondaryButton: .cancel(Text("Cancel"))
+                    secondaryButton: .cancel(Text("Cancel")) {
+                        themeToDelete = nil
+                    }
                 )
             }
         }
         .fileImporter(
             isPresented: $showingImporter,
-            allowedContentTypes: [.json],
+            allowedContentTypes: [UTType(filenameExtension: "gtheme") ?? .data],
             allowsMultipleSelection: false
         ) { result in
             handleFileImport(result)
+        }
+        .sheet(isPresented: $showPasswordPrompt) {
+            ThemePasswordView(
+                password: $themePassword,
+                onConfirm: {
+                    if let url = pendingThemeURL {
+                        importThemeWithPassword(url: url, password: themePassword)
+                        themePassword = ""
+                        pendingThemeURL = nil
+                        showPasswordPrompt = false
+                    }
+                },
+                onCancel: {
+                    themePassword = ""
+                    pendingThemeURL = nil
+                    showPasswordPrompt = false
+                }
+            )
+            .environmentObject(tcf)
+        }
+        .sheet(isPresented: $showDeveloperInfo) {
+            DeveloperInfoView()
+                .environmentObject(tcf)
         }
     }
 
@@ -126,12 +159,12 @@ struct SettingsView: View {
             // Header with accent bar
             HStack(spacing: 12) {
                 Rectangle()
-                    .fill(themeEngine.colors.accent)
+                    .fill(tcf.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
                 Text("Login")
                     .font(.title3.bold())
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
             }
             SettingsToggleRow(label: "Remember login", isOn: $rememberLogin) { newValue in
                 self.handleRememberLoginChanged(newValue)
@@ -145,12 +178,12 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 12) {
                 Rectangle()
-                    .fill(themeEngine.colors.accent)
+                    .fill(tcf.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
                 Text("Privacy")
                     .font(.title3.bold())
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
             }
 
             VStack(spacing: 20) {
@@ -171,12 +204,12 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 12) {
                 Rectangle()
-                    .fill(themeEngine.colors.accent)
+                    .fill(tcf.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
                 Text("Discord Integration Settings")
                     .font(.title3.bold())
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
             }
 
             ZStack {
@@ -186,10 +219,10 @@ struct SettingsView: View {
                     .autocapitalization(.none)
                     .padding()
                     .liquidGlassBackground(cornerRadius: 12)
-                    .foregroundColor(themeEngine.colors.text)
+                    .foregroundColor(tcf.colors.text)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(themeEngine.colors.accent.opacity(0.5), lineWidth: 1)
+                            .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
                     )
                 Color.clear
                     .contentShape(Rectangle())
@@ -217,7 +250,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Custom Message")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(themeEngine.colors.text.opacity(0.8))
+                            .foregroundColor(tcf.colors.text.opacity(0.8))
                         
                         TextField("Enter your message...", text: $customDiscordMessage, axis: .vertical)
                             .textFieldStyle(.plain)
@@ -227,10 +260,10 @@ struct SettingsView: View {
                                     .fill(.ultraThinMaterial)
                                     .opacity(0.6)
                             )
-                            .foregroundColor(themeEngine.colors.text)
+                            .foregroundColor(tcf.colors.text)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(themeEngine.colors.accent.opacity(0.5), lineWidth: 1)
+                                    .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
                             )
                             .lineLimit(3...6)
                     }
@@ -242,7 +275,7 @@ struct SettingsView: View {
                             customDiscordMessage = ""
                         }
                     }
-                    .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
+                    .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: tcf.colors.background))
                     .disabled(customDiscordMessage.isEmpty)
                     .opacity(customDiscordMessage.isEmpty ? 0.6 : 1.0)
                 }
@@ -259,7 +292,7 @@ struct SettingsView: View {
                         await webhookManager.logTestPost()
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent.opacity(0.7), foregroundColor: themeEngine.colors.background))
+                .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent.opacity(0.7), foregroundColor: tcf.colors.background))
             }
         }
         .padding(20)
@@ -268,20 +301,19 @@ struct SettingsView: View {
 
     private var designCard: some View {
         VStack(alignment: .leading, spacing: 24) {
-            let availableThemes = themeEngine.availableThemes
-            let textColor = themeEngine.colors.text
+            let textColor = tcf.colors.text
 
             HStack(spacing: 12) {
                 Rectangle()
-                    .fill(themeEngine.colors.accent)
+                    .fill(tcf.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
                 Text("Design")
                     .font(.title3.bold())
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
             }
 
-            ForEach(availableThemes) { theme in
+            ForEach(tcf.availableThemes) { theme in
                 HStack {
                     Button {
                         Task {
@@ -292,9 +324,9 @@ struct SettingsView: View {
                             Text(theme.name)
                                 .foregroundColor(textColor)
                             Spacer()
-                            if themeEngine.selectedThemeId == theme.id {
+                            if tcf.selectedThemeId == theme.id {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(themeEngine.colors.accent)
+                                    .foregroundColor(tcf.colors.accent)
                             }
                         }
                     }
@@ -320,48 +352,50 @@ struct SettingsView: View {
             Button("Upload theme") {
                 showingImporter = true
             }
-            .buttonStyle(PrimaryButtonStyle(backgroundColor: themeEngine.colors.accent, foregroundColor: themeEngine.colors.background))
+            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: tcf.colors.background))
         }
         .padding(20)
         .liquidGlassCard()
     }
     
-    private var appSettingsCard: some View {
+    private var developerOptionsCard: some View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 12) {
                 Rectangle()
-                    .fill(themeEngine.colors.accent)
+                    .fill(tcf.colors.accent)
                     .frame(width: 4, height: 24)
                     .cornerRadius(2)
-                Text("Performance Settings")
+                Text("Developer Options")
                     .font(.title3.bold())
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
             }
             
+            // Performance Settings
             SettingsToggleRow(label: "Enable Animations", isOn: $animationsEnabled)
+            
+            // Developer Information Button
+            Button("Show Developer Information") {
+                showDeveloperInfo = true
+            }
+            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: tcf.colors.background))
         }
         .padding(20)
         .liquidGlassCard()
     }
 
-    private func deleteTheme(_ theme: ThemeModel) {
-        // Built-in Themes können nicht gelöscht werden
+    private func deleteTheme(_ theme: TCFThemeModel) {
+        // Built-in Themes cannot be deleted
         let builtInThemeIds = ["default", "light", "dark"]
         if builtInThemeIds.contains(theme.id) {
-            print("⚠️ Built-in Theme kann nicht gelöscht werden:", theme.name)
+            print("⚠️ TCF: Built-in theme cannot be deleted: \(theme.name)")
             return
         }
         
-        let fileManager = FileManager.default
-        let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let themeFile = docsURL.appendingPathComponent("themes").appendingPathComponent("\(theme.id).json")
-
-        do {
-            try fileManager.removeItem(at: themeFile)
-            print("✅ Theme gelöscht:", theme.name)
-            themeEngine.loadThemes()
-        } catch {
-            print("❌ Fehler beim Löschen des Themes:", error)
+        tcf.deleteTheme(theme)
+        
+        // Switch to default if deleted theme was active
+        if tcf.selectedThemeId == theme.id {
+            tcf.selectedThemeId = "default"
         }
     }
 
@@ -376,37 +410,84 @@ struct SettingsView: View {
                     }
                 }
 
+                // Validate file extension - only .gtheme files are allowed
+                guard selectedFile.pathExtension.lowercased() == "gtheme" else {
+                    print("❌ TCF: Invalid file extension. Only .gtheme files are supported. File has extension: \(selectedFile.pathExtension)")
+                    // Show corruption error - file was renamed or has wrong extension
+                    return
+                }
+
                 do {
-                    let fileManager = FileManager.default
-                    let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-                    let themesDir = docsURL.appendingPathComponent("themes")
-
-                    if !fileManager.fileExists(atPath: themesDir.path) {
-                        try fileManager.createDirectory(at: themesDir, withIntermediateDirectories: true)
-                    }
-
-                    let destinationURL = themesDir.appendingPathComponent(selectedFile.lastPathComponent)
-                    if fileManager.fileExists(atPath: destinationURL.path) {
-                        try fileManager.removeItem(at: destinationURL)
-                    }
-
-                    themeEngine.loadThemes()
-                    if let lastTheme = themeEngine.availableThemes.last {
-                        themeEngine.selectedThemeId = lastTheme.id
-                        print("✅ Theme aktiviert:", lastTheme.name)
-                        if logThemeChanges {
-                            Task {
-                                await webhookManager.logThemeChange(themeName: lastTheme.name)
-                            }
+                    // Check if theme is encrypted
+                    let data = try Data(contentsOf: selectedFile)
+                    
+                    // Validate file content structure
+                    if !ThemeEncryptionManager.shared.isEncrypted(data) {
+                        // Try to decode as JSON to validate structure
+                        do {
+                            _ = try JSONDecoder().decode(TCFThemeModel.self, from: data)
+                        } catch {
+                            print("❌ TCF: File appears corrupted or invalid. Error: \(error)")
+                            // Show corruption error
+                            return
                         }
                     }
-
+                    
+                    if ThemeEncryptionManager.shared.isEncrypted(data) {
+                        // Request password
+                        pendingThemeURL = selectedFile
+                        showPasswordPrompt = true
+                        return
+                    }
+                    
+                    // Import and adapt theme automatically
+                    let importedTheme = try tcf.importAndAdaptTheme(from: selectedFile)
+                    
+                    // Activate the imported theme
+                    tcf.selectedThemeId = importedTheme.id
+                    print("✅ TCF: Theme imported and adapted: \(importedTheme.name)")
+                    
+                    if logThemeChanges {
+                        Task {
+                            await webhookManager.logThemeChange(themeName: importedTheme.name)
+                        }
+                    }
                 } catch {
-                    print("❌ Error copying: \(error)")
+                    print("❌ TCF Import error: \(error)")
+                    // Show corruption error for non-.gtheme files or invalid content
+                    if error is DecodingError {
+                        print("❌ TCF: File appears corrupted or invalid format.")
+                    }
                 }
             }
         case .failure(let error):
-            print("❌ Import error: \(error)")
+            print("❌ TCF Import error: \(error)")
+        }
+    }
+    
+    private func importThemeWithPassword(url: URL, password: String) {
+        do {
+            let accessGranted = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessGranted {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+            
+            // Import encrypted theme
+            let importedTheme = try tcf.importAndAdaptTheme(from: url, password: password)
+            
+            // Activate the imported theme
+            tcf.selectedThemeId = importedTheme.id
+            print("✅ TCF: Encrypted theme imported and adapted: \(importedTheme.name)")
+            
+            if logThemeChanges {
+                Task {
+                    await webhookManager.logThemeChange(themeName: importedTheme.name)
+                }
+            }
+        } catch {
+            print("❌ TCF: Failed to import encrypted theme: \(error)")
         }
     }
     
@@ -430,8 +511,8 @@ struct SettingsView: View {
         // Theme anwenden
         await MainActor.run {
             conditionalWithAnimation(.easeInOut(duration: 0.4)) {
-                themeEngine.selectedThemeId = themeId
-                themeEngine.objectWillChange.send() // Force UI update
+                tcf.selectedThemeId = themeId
+                tcf.objectWillChange.send() // Force UI update
             }
         }
         
@@ -442,9 +523,9 @@ struct SettingsView: View {
             try? await Task.sleep(nanoseconds: 50_000_000) // 0.05 Sekunden
         }
         
-        // Discord Logging (falls aktiviert)
+        // Discord Logging (if enabled)
         if logThemeChanges,
-           let theme = themeEngine.availableThemes.first(where: { $0.id == themeId }) {
+           let theme = tcf.availableThemes.first(where: { $0.id == themeId }) {
             await webhookManager.logThemeChange(themeName: theme.name)
         }
         
@@ -460,10 +541,10 @@ struct SettingsView: View {
     
     private func handleThemeChange(selectedId: String) {
         // Theme wird automatisch durch @AppStorage selectedThemeId aktualisiert
-        themeEngine.selectedThemeId = selectedId
-        themeEngine.objectWillChange.send() // Force UI update
+        tcf.selectedThemeId = selectedId
+        tcf.objectWillChange.send() // Force UI update
         if logThemeChanges,
-           let theme = themeEngine.availableThemes.first(where: { $0.id == selectedId }) {
+           let theme = tcf.availableThemes.first(where: { $0.id == selectedId }) {
             Task {
                 await webhookManager.logThemeChange(themeName: theme.name)
             }
@@ -498,9 +579,142 @@ struct SettingsView: View {
 
 }
 
+// MARK: - Developer Info View
+struct DeveloperInfoView: View {
+    @EnvironmentObject var tcf: TCF
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    // Header Icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        tcf.colors.accent.opacity(0.3),
+                                        tcf.colors.accent.opacity(0.1)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 80, height: 80)
+                        
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(tcf.colors.accent)
+                    }
+                    .padding(.top, 20)
+                    
+                    Text("Developer Information")
+                        .font(.title2.bold())
+                        .foregroundColor(tcf.colors.text)
+                    
+                    VStack(spacing: 20) {
+                        InfoRow(title: "App Name", value: appName)
+                        InfoRow(title: "App Version", value: appVersion)
+                        InfoRow(title: "Build Number", value: buildNumber)
+                        InfoRow(title: "Bundle Identifier", value: bundleIdentifier)
+                        InfoRow(title: "TCF Version", value: ThemeControllingFramework.version)
+                        InfoRow(title: "iOS Version", value: iosVersion)
+                        InfoRow(title: "Device Model", value: deviceModel)
+                        InfoRow(title: "Device Name", value: deviceName)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Spacer(minLength: 20)
+                }
+                .padding(.vertical, 20)
+            }
+            .background(tcf.colors.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(tcf.colors.accent)
+                }
+            }
+        }
+    }
+    
+    // MARK: - App Information
+    private var appName: String {
+        Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String ?? 
+        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? 
+        "Zentra"
+    }
+    
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+    
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+    
+    private var bundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "gv.Zentra"
+    }
+    
+    private var iosVersion: String {
+        UIDevice.current.systemVersion
+    }
+    
+    private var deviceModel: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let modelCode = withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(validatingUTF8: $0)
+            }
+        }
+        return modelCode ?? UIDevice.current.model
+    }
+    
+    private var deviceName: String {
+        UIDevice.current.name
+    }
+}
+
+// MARK: - Info Row Component
+private struct InfoRow: View {
+    let title: String
+    let value: String
+    
+    @EnvironmentObject var tcf: TCF
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(tcf.colors.text.opacity(0.7))
+            
+            Text(value)
+                .font(.body.weight(.semibold))
+                .foregroundColor(tcf.colors.text)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+                .opacity(0.5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(tcf.colors.accent.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
 // MARK: - Theme Loading View
 struct ThemeLoadingView: View {
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @AppStorage("animationsEnabled") var animationsEnabled: Bool = true
     @State private var rotationAngle: Double = 0
     @State private var scale: CGFloat = 0.8
@@ -519,8 +733,8 @@ struct ThemeLoadingView: View {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    themeEngine.colors.accent.opacity(0.3),
-                                    themeEngine.colors.accent.opacity(0.1)
+                                    tcf.colors.accent.opacity(0.3),
+                                    tcf.colors.accent.opacity(0.1)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -534,8 +748,8 @@ struct ThemeLoadingView: View {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    themeEngine.colors.accent,
-                                    themeEngine.colors.accent.opacity(0.6)
+                                    tcf.colors.accent,
+                                    tcf.colors.accent.opacity(0.6)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -549,11 +763,11 @@ struct ThemeLoadingView: View {
                 
                 Text("Applying theme...")
                     .font(.headline)
-                    .foregroundColor(themeEngine.colors.text)
+                    .foregroundColor(tcf.colors.text)
             }
             .padding(40)
             .liquidGlassCard()
-            .shadow(color: themeEngine.colors.accent.opacity(0.3), radius: 20, x: 0, y: 10)
+            .shadow(color: tcf.colors.accent.opacity(0.3), radius: 20, x: 0, y: 10)
         }
         .onAppear {
             if animationsEnabled {
@@ -622,12 +836,12 @@ private struct SettingsToggleRow: View {
     let label: String
     @Binding var isOn: Bool
     var onChanged: ((Bool) -> Void)? = nil
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
 
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(themeEngine.colors.text)
+                .foregroundColor(tcf.colors.text)
             Spacer()
             Toggle("", isOn: Binding(
                 get: { isOn },
@@ -637,7 +851,7 @@ private struct SettingsToggleRow: View {
                 }
             ))
             .labelsHidden()
-            .tint(themeEngine.colors.accent)
+            .tint(tcf.colors.accent)
         }
         .padding(16)
         .liquidGlassBackground(cornerRadius: 12)

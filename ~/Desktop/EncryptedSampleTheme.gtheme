@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "id": "encrypted-sample",
+    "name": "Encrypted Sample Theme",
+    "version": "1.0",
+    "isEncrypted": true,
+    "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    "adaptsToDeviceDefaults": true,
+    "deviceDefaultBase": "dark"
+  },
+  "encryptedData": "NOTE: This is a placeholder. Real encrypted themes will contain base64-encoded AES-GCM encrypted data here. To create an encrypted theme, use the app's export feature with password protection."
+}
+
+
+
+

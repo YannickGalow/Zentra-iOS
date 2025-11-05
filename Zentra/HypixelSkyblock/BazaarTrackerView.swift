@@ -755,6 +755,6 @@ struct BazaarSavedItemRow: View {
 // Note: Do NOT use @main in view files like this. The @main attribute should only be applied to the main App struct entry point.
 // Retain this #Preview macro for SwiftUI previews.
 #Preview {
-    BazaarTrackerView().environmentObject(ThemeEngine())
+        BazaarTrackerView().environmentObject(ThemeEngine())
 }
 

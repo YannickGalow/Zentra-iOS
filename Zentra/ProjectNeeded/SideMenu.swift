@@ -16,8 +16,12 @@ struct Sidebar: View {
     @State private var pendingLinkURL: URL? = nil
     @State private var pendingLinkAppURL: URL? = nil
     @State private var pendingLinkName: String = ""
+    @State private var logoTapCount: Int = 0
+    @State private var lastTapTime: Date = Date()
+    @State private var showDeveloperOptionsToast: Bool = false
+    @State private var developerOptionsToastMessage: String = ""
 
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @EnvironmentObject var webhookManager: DiscordWebhookManager
 
     private var displayName: String {
@@ -43,9 +47,9 @@ struct Sidebar: View {
             // Animated gradient background
             LinearGradient(
                 colors: [
-                    themeEngine.colors.background,
-                    themeEngine.colors.background.opacity(0.98),
-                    themeEngine.colors.background
+                    tcf.colors.background,
+                    tcf.colors.background.opacity(0.98),
+                    tcf.colors.background
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -62,8 +66,8 @@ struct Sidebar: View {
                                 .fill(
                                     RadialGradient(
                                         colors: [
-                                            themeEngine.colors.accent.opacity(0.3),
-                                            themeEngine.colors.accent.opacity(0.1),
+                                            tcf.colors.accent.opacity(0.3),
+                                            tcf.colors.accent.opacity(0.1),
                                             .clear
                                         ],
                                         center: .center,
@@ -77,8 +81,8 @@ struct Sidebar: View {
                                 .stroke(
                                     LinearGradient(
                                         colors: [
-                                            themeEngine.colors.accent.opacity(0.5),
-                                            themeEngine.colors.accent.opacity(0.2)
+                                            tcf.colors.accent.opacity(0.5),
+                                            tcf.colors.accent.opacity(0.2)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -90,24 +94,31 @@ struct Sidebar: View {
                             Image(systemName: isLoggedIn ? "person.crop.circle.fill" : "person.crop.circle")
                                 .resizable()
                                 .frame(width: 60, height: 60)
-                                .foregroundColor(themeEngine.colors.accent)
-                                .shadow(color: themeEngine.colors.accent.opacity(0.6), radius: 12, x: 0, y: 6)
+                                .foregroundColor(tcf.colors.accent)
+                                .shadow(color: tcf.colors.accent.opacity(0.6), radius: 12, x: 0, y: 6)
                         }
                         .padding(.top, 30)
+                        .contentShape(Circle())
+                        .onTapGesture {
+                            // Only count taps when logged in
+                            if isLoggedIn {
+                                handleLogoTap()
+                            }
+                        }
                         
                         VStack(spacing: 6) {
-                            Text(displayName)
+                        Text(displayName)
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(themeEngine.colors.text)
+                                .foregroundColor(tcf.colors.text)
                             
                             HStack(spacing: 6) {
                                 Circle()
-                                    .fill(themeEngine.colors.accent)
+                                    .fill(tcf.colors.accent)
                                     .frame(width: 6, height: 6)
                                 
                                 Text(loginStatus)
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(themeEngine.colors.text.opacity(0.6))
+                                    .foregroundColor(tcf.colors.text.opacity(0.6))
                             }
                         }
                         
@@ -126,7 +137,7 @@ struct Sidebar: View {
                                 Text(isLoggedIn ? "Sign Out" : "Login")
                                     .font(.system(size: 16, weight: .semibold))
                             }
-                            .foregroundColor(isLoggedIn ? themeEngine.colors.error : themeEngine.colors.accent)
+                            .foregroundColor(isLoggedIn ? tcf.colors.error : tcf.colors.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(
@@ -139,11 +150,11 @@ struct Sidebar: View {
                                         .fill(
                                             LinearGradient(
                                                 colors: isLoggedIn ? [
-                                                    themeEngine.colors.error.opacity(0.15),
-                                                    themeEngine.colors.error.opacity(0.08)
+                                                    tcf.colors.error.opacity(0.15),
+                                                    tcf.colors.error.opacity(0.08)
                                                 ] : [
-                                                    themeEngine.colors.accent.opacity(0.15),
-                                                    themeEngine.colors.accent.opacity(0.08)
+                                                    tcf.colors.accent.opacity(0.15),
+                                                    tcf.colors.accent.opacity(0.08)
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
@@ -156,11 +167,11 @@ struct Sidebar: View {
                                     .stroke(
                                         LinearGradient(
                                             colors: isLoggedIn ? [
-                                                themeEngine.colors.error.opacity(0.4),
-                                                themeEngine.colors.error.opacity(0.2)
+                                                tcf.colors.error.opacity(0.4),
+                                                tcf.colors.error.opacity(0.2)
                                             ] : [
-                                                themeEngine.colors.accent.opacity(0.4),
-                                                themeEngine.colors.accent.opacity(0.2)
+                                                tcf.colors.accent.opacity(0.4),
+                                                tcf.colors.accent.opacity(0.2)
                                             ],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
@@ -180,11 +191,11 @@ struct Sidebar: View {
                         HStack {
                             Text("Navigation")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(themeEngine.colors.text.opacity(0.5))
+                                .foregroundColor(tcf.colors.text.opacity(0.5))
                                 .textCase(.uppercase)
                                 .tracking(1)
-                            Spacer()
-                        }
+                    Spacer()
+                }
                         .padding(.horizontal, 32)
                         .padding(.bottom, 16)
                         
@@ -195,32 +206,30 @@ struct Sidebar: View {
                                 isSelected: selectedPage == "start"
                             ) {
                                 conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                    selectedPage = "start"
-                                    onCollapse?()
-                                }
-                            }
+                            selectedPage = "start"
+                            onCollapse?()
+                        }
+                    }
                             
                             SidebarNavButton(
                                 icon: "chart.bar.xaxis",
                                 label: "Bazaar Tracker",
-                                isSelected: selectedPage == "bazaar"
-                            ) {
-                                conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                    selectedPage = "bazaar"
-                                    onCollapse?()
-                                }
-                            }
+                                isSelected: false,
+                                action: {
+                                    // Functionality disabled
+                                },
+                                isDisabled: true
+                            )
                             
                             SidebarNavButton(
                                 icon: "eurosign.circle.fill",
                                 label: "Bazaar Profit",
-                                isSelected: selectedPage == "bazaarProfit"
-                            ) {
-                                conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                    selectedPage = "bazaarProfit"
-                                    onCollapse?()
-                                }
-                            }
+                                isSelected: false,
+                                action: {
+                                    // Functionality disabled
+                                },
+                                isDisabled: true
+                            )
                             
                             SidebarNavButton(
                                 icon: "gearshape.fill",
@@ -239,7 +248,7 @@ struct Sidebar: View {
                         HStack {
                             Text("Connect")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(themeEngine.colors.text.opacity(0.5))
+                                .foregroundColor(tcf.colors.text.opacity(0.5))
                                 .textCase(.uppercase)
                                 .tracking(1)
                             Spacer()
@@ -268,6 +277,35 @@ struct Sidebar: View {
                 }
                 .padding(.top, 20)
             }
+            
+            // Developer Options Toast Notification
+            if showDeveloperOptionsToast {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text(developerOptionsToastMessage)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.9)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .padding(.bottom, 40)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showDeveloperOptionsToast)
+            }
         }
         .frame(minWidth: 300)
         .sheet(isPresented: Binding(
@@ -284,7 +322,7 @@ struct Sidebar: View {
             }
         )) {
             SettingsView(selectedPage: $selectedPage)
-                .environmentObject(themeEngine)
+                .environmentObject(tcf)
         }
         .sheet(isPresented: Binding(
             get: { showLoginView },
@@ -313,7 +351,7 @@ struct Sidebar: View {
                     Task { await webhookManager.logLogin(username: currentUsername) }
                 }
             })
-            .environmentObject(themeEngine)
+            .environmentObject(tcf)
         }
         .alert("Do you really want to sign out?", isPresented: $showCustomLogoutDialog) {
             Button(role: .cancel) {
@@ -366,6 +404,52 @@ struct Sidebar: View {
             }
         }
     }
+    
+    private func handleLogoTap() {
+        // Only process taps when logged in
+        guard isLoggedIn else { return }
+        
+        let now = Date()
+        let timeSinceLastTap = now.timeIntervalSince(lastTapTime)
+        
+        // Reset counter if more than 2 seconds passed since last tap
+        if timeSinceLastTap > 2.0 {
+            logoTapCount = 1
+        } else {
+            logoTapCount += 1
+        }
+        
+        lastTapTime = now
+        
+        // If 5 taps detected, toggle developer options
+        if logoTapCount >= 5 {
+            let currentValue = UserDefaults.standard.bool(forKey: "developerOptionsEnabled")
+            let newValue = !currentValue
+            UserDefaults.standard.set(newValue, forKey: "developerOptionsEnabled")
+            logoTapCount = 0
+            
+            // Haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            
+            // Show temporary toast notification
+            developerOptionsToastMessage = newValue ? "Developer Options Enabled" : "Developer Options Disabled"
+            withAnimation {
+                showDeveloperOptionsToast = true
+            }
+            
+            // Hide toast after 2 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation {
+                    showDeveloperOptionsToast = false
+                }
+            }
+        } else {
+            // Light haptic feedback for each tap
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+    }
 }
 
 // Modern Navigation Button
@@ -374,8 +458,9 @@ private struct SidebarNavButton: View {
     let label: String
     let isSelected: Bool
     let action: () -> Void
+    var isDisabled: Bool = false
     
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @State private var isPressed = false
     
     var body: some View {
@@ -387,8 +472,8 @@ private struct SidebarNavButton: View {
                             isSelected ?
                             LinearGradient(
                                 colors: [
-                                    themeEngine.colors.accent.opacity(0.3),
-                                    themeEngine.colors.accent.opacity(0.2)
+                                    tcf.colors.accent.opacity(0.3),
+                                    tcf.colors.accent.opacity(0.2)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -406,12 +491,12 @@ private struct SidebarNavButton: View {
                     
                     Image(systemName: icon)
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(isSelected ? themeEngine.colors.accent : themeEngine.colors.text.opacity(0.7))
+                        .foregroundColor(isDisabled ? tcf.colors.text.opacity(0.3) : (isSelected ? tcf.colors.accent : tcf.colors.text.opacity(0.7)))
                 }
                 
                 Text(label)
                     .font(.system(size: 17, weight: isSelected ? .semibold : .medium))
-                    .foregroundColor(isSelected ? themeEngine.colors.text : themeEngine.colors.text.opacity(0.8))
+                    .foregroundColor(isDisabled ? tcf.colors.text.opacity(0.3) : (isSelected ? tcf.colors.text : tcf.colors.text.opacity(0.8)))
                 
                 Spacer()
             }
@@ -421,15 +506,15 @@ private struct SidebarNavButton: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(.ultraThinMaterial)
-                        .opacity(isSelected ? 0.5 : 0.3)
+                        .opacity(isDisabled ? 0.1 : (isSelected ? 0.5 : 0.3))
                     
-                    if isSelected {
+                    if isSelected && !isDisabled {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        themeEngine.colors.accent.opacity(0.12),
-                                        themeEngine.colors.accent.opacity(0.06)
+                                        tcf.colors.accent.opacity(0.12),
+                                        tcf.colors.accent.opacity(0.06)
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
@@ -441,11 +526,20 @@ private struct SidebarNavButton: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(
-                        isSelected ?
+                        isDisabled ?
                         LinearGradient(
                             colors: [
-                                themeEngine.colors.accent.opacity(0.5),
-                                themeEngine.colors.accent.opacity(0.2)
+                                tcf.colors.text.opacity(0.1),
+                                tcf.colors.text.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        (isSelected ?
+                        LinearGradient(
+                            colors: [
+                                tcf.colors.accent.opacity(0.5),
+                                tcf.colors.accent.opacity(0.2)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -457,24 +551,25 @@ private struct SidebarNavButton: View {
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
-                        ),
+                        )),
                         lineWidth: isSelected ? 1.5 : 1
                     )
             )
             .shadow(
-                color: isSelected ? themeEngine.colors.accent.opacity(0.15) : .black.opacity(0.05),
-                radius: isSelected ? 8 : 4,
+                color: isDisabled ? .clear : (isSelected ? tcf.colors.accent.opacity(0.15) : .black.opacity(0.05)),
+                radius: isDisabled ? 0 : (isSelected ? 8 : 4),
                 x: 0,
-                y: isSelected ? 4 : 2
+                y: isDisabled ? 0 : (isSelected ? 4 : 2)
             )
         }
         .buttonStyle(SidebarNavButtonStyle(isPressed: $isPressed))
+        .allowsHitTesting(!isDisabled)
     }
 }
 
 private struct SidebarNavButtonStyle: ButtonStyle {
     @Binding var isPressed: Bool
-    
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
@@ -492,15 +587,15 @@ private struct SidebarSocialButton: View {
     let label: String
     let action: () -> Void
     
-    @EnvironmentObject var themeEngine: ThemeEngine
+    @EnvironmentObject var tcf: TCF
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(themeEngine.colors.accent)
+                    .foregroundColor(tcf.colors.accent)
                     .frame(width: 50, height: 50)
                     .background(
                         ZStack {
@@ -512,8 +607,8 @@ private struct SidebarSocialButton: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            themeEngine.colors.accent.opacity(0.15),
-                                            themeEngine.colors.accent.opacity(0.08)
+                                            tcf.colors.accent.opacity(0.15),
+                                            tcf.colors.accent.opacity(0.08)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -526,8 +621,8 @@ private struct SidebarSocialButton: View {
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        themeEngine.colors.accent.opacity(0.4),
-                                        themeEngine.colors.accent.opacity(0.2)
+                                        tcf.colors.accent.opacity(0.4),
+                                        tcf.colors.accent.opacity(0.2)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -535,11 +630,11 @@ private struct SidebarSocialButton: View {
                                 lineWidth: 1.5
                             )
                     )
-                    .shadow(color: themeEngine.colors.accent.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .shadow(color: tcf.colors.accent.opacity(0.2), radius: 8, x: 0, y: 4)
                 
-                Text(label)
+            Text(label)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(themeEngine.colors.text.opacity(0.7))
+                    .foregroundColor(tcf.colors.text.opacity(0.7))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
@@ -577,6 +672,6 @@ private struct SidebarSocialButtonStyle: ButtonStyle {
             .conditionalAnimation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { _, newValue in
                 isPressed = newValue
-            }
+        }
     }
 }
