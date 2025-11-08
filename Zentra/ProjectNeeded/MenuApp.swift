@@ -4,6 +4,7 @@ import Foundation
 import UserNotifications
 import UIKit
 import ActivityKit
+import Darwin
 
 class PushNotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -44,8 +45,24 @@ struct MenuApp: App {
     @State private var didSendFirstLaunchActivation = UserDefaults.standard.bool(forKey: "didSendFirstLaunchActivation")
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup: Bool = false
     @AppStorage("authToken") private var authToken: String = ""
+    @AppStorage("deviceUUID") private var deviceUUID: String = ""
 
     init() {
+        // Load UUID from Keychain on app start (survives app reinstall)
+        let keychainService = "com.zentra.deviceUUID"
+        let keychainAccount = "deviceUUID"
+        
+        // If UserDefaults is empty, try to load from Keychain
+        if deviceUUID.isEmpty {
+            if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+                // Restore UUID from Keychain to UserDefaults
+                UserDefaults.standard.set(keychainUUID, forKey: "deviceUUID")
+                print("✅ Device UUID beim App-Start aus Keychain wiederhergestellt: \(keychainUUID)")
+            }
+        } else {
+            // Ensure UUID is also saved in Keychain (migration for existing installations)
+            KeychainHelper.shared.save(deviceUUID, service: keychainService, account: keychainAccount)
+        }
         // Don't reset login status on app start
         // Login status should persist if token exists
         // Only reset if explicitly logged out
@@ -89,15 +106,83 @@ struct MenuApp: App {
                 authenticateIfNeeded()
 
                 if !didSendFirstLaunchActivation {
-                    // Erfasse Gerätenamen beim ersten Start
-                    let deviceName = UIDevice.current.name
-                    UserDefaults.standard.set(deviceName, forKey: "deviceName")
-                    print("✅ Gerätename erfasst: \(deviceName)")
+                    // Generate or retrieve device UUID FIRST - check Keychain first (persists after reinstall)
+                    let keychainService = "com.zentra.deviceUUID"
+                    let keychainAccount = "deviceUUID"
                     
+                    // Try to get UUID from Keychain first (survives app reinstall)
+                    if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+                        deviceUUID = keychainUUID
+                        print("✅ Device UUID aus Keychain geladen: \(deviceUUID)")
+                    } else if deviceUUID.isEmpty {
+                        // Generate new UUID if not found in Keychain or UserDefaults
+                        deviceUUID = UUID().uuidString
+                        print("✅ Neue Device UUID generiert: \(deviceUUID)")
+                    }
+                    
+                    // IMPORTANT: Save UUID to Keychain (persists after app reinstall) AND UserDefaults (for quick access)
+                    // Keychain has priority - it survives app deletion/reinstall
+                    KeychainHelper.shared.save(deviceUUID, service: keychainService, account: keychainAccount)
+                    UserDefaults.standard.set(deviceUUID, forKey: "deviceUUID")
+                    UserDefaults.standard.synchronize()  // Force immediate save
+                    
+                    // Collect device information
+                    let deviceName = UIDevice.current.name
+                    // Get actual device model (e.g., "iPhone15,2" instead of just "iPhone")
+                    var systemInfo = utsname()
+                    uname(&systemInfo)
+                    let modelCode = withUnsafePointer(to: &systemInfo.machine) {
+                        $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                            String(validatingUTF8: $0)
+                        }
+                    }
+                    let deviceModel = modelCode ?? UIDevice.current.model
+                    let iosVersion = UIDevice.current.systemVersion
+                    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+                    let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+                    
+                    UserDefaults.standard.set(deviceName, forKey: "deviceName")
+                    print("✅ Geräteinformationen erfasst:")
+                    print("   - UUID: \(deviceUUID)")
+                    print("   - Name: \(deviceName)")
+                    print("   - Model: \(deviceModel)")
+                    print("   - iOS: \(iosVersion)")
+                    
+                    // Send activation via server (non-blocking - UUID is already saved)
                     Task {
-                        await discordWebhookManager.sendProductActivationEmbed(deviceName: deviceName)
-                        UserDefaults.standard.set(true, forKey: "didSendFirstLaunchActivation")
-                        didSendFirstLaunchActivation = true
+                        do {
+                            print("🔄 Sende Aktivierung an Server...")
+                            let response = try await ServerManager.shared.sendDeviceActivation(
+                                deviceUUID: deviceUUID,
+                                deviceName: deviceName,
+                                deviceModel: deviceModel,
+                                iosVersion: iosVersion,
+                                appVersion: appVersion,
+                                buildNumber: buildNumber
+                            )
+                            
+                            // Mark as sent even if Discord failed - UUID is valid
+                            await MainActor.run {
+                                UserDefaults.standard.set(true, forKey: "didSendFirstLaunchActivation")
+                                didSendFirstLaunchActivation = true
+                            }
+                            
+                            if response.success {
+                                print("✅ Aktivierung erfolgreich über Server gesendet - UUID: \(deviceUUID)")
+                            } else {
+                                print("⚠️ Server empfangen, aber Discord-Fehler: \(response.message)")
+                                print("✅ UUID wurde trotzdem gespeichert: \(deviceUUID)")
+                            }
+                        } catch {
+                            print("❌ Fehler bei Aktivierung: \(error.localizedDescription)")
+                            print("❌ Fehler-Details: \(error)")
+                            print("✅ UUID wurde trotzdem gespeichert: \(deviceUUID)")
+                            // Mark as sent anyway - UUID is saved and that's what matters
+                            await MainActor.run {
+                                UserDefaults.standard.set(true, forKey: "didSendFirstLaunchActivation")
+                                didSendFirstLaunchActivation = true
+                            }
+                        }
                     }
                 }
                 

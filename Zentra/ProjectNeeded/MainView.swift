@@ -375,9 +375,17 @@ struct ServerStatusCard: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(isOnline ? "Online" : "Offline")
-                        .font(.title2.bold())
-                        .foregroundColor(tcf.colors.text)
+                    HStack(spacing: 8) {
+                        Text(isOnline ? "Online" : "Offline")
+                            .font(.title2.bold())
+                            .foregroundColor(tcf.colors.text)
+                        
+                        if isOnline, let ping = serverStatus?.ping_ms {
+                            Text("(\(Int(ping)) ms)")
+                                .font(.subheadline)
+                                .foregroundColor(tcf.colors.text.opacity(0.6))
+                        }
+                    }
                     
                     HStack(spacing: 6) {
                         if !isLoading {
@@ -427,7 +435,7 @@ struct ServerStatusCard: View {
         } catch {
             await MainActor.run {
                 // If server is unreachable, show offline
-                self.serverStatus = ServerStatus(online: false, timestamp: Date().iso8601, message: "Server unreachable")
+                self.serverStatus = ServerStatus(online: false, timestamp: Date().iso8601, message: "Server unreachable", ping_ms: nil)
                 self.isLoading = false
                 self.errorMessage = nil
             }

@@ -1,0 +1,20 @@
+{
+  "GVspeed": {
+    "email": "yannick@galowmail.dev",
+    "password": "GVspeed.01",
+    "device_uuid": "4931135C-BF53-428C-A532-73A7620031B0",
+    "created_at": "2025-11-08T22:04:41.615160"
+  },
+  "Test": {
+    "email": "test@testmail.mail",
+    "password": "qqqqqq",
+    "device_uuid": "4931135C-BF53-428C-A532-73A7620031B0",
+    "created_at": "2025-11-08T22:16:43.991567"
+  },
+  "test2": {
+    "email": "test2@testmail.mail",
+    "password": "qqqqqq",
+    "device_uuid": "4931135C-BF53-428C-A532-73A7620031B0",
+    "created_at": "2025-11-08T22:17:54.309631"
+  }
+}

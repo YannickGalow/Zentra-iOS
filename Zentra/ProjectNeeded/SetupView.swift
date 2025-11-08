@@ -5,9 +5,15 @@ struct SetupView: View {
     @Binding var hasCompletedSetup: Bool
     @State private var currentPage = 0
     @State private var showLoginView = false
+    @State private var registrationLimitReached = false
+    @State private var isCheckingLimit = false
+    @State private var accountCount = 0
+    @State private var remainingRegistrations = 3
+    @AppStorage("deviceUUID") private var deviceUUID: String = ""
     @EnvironmentObject var tcf: TCF
     
     private let totalPages = 4
+    private let serverManager = ServerManager.shared
     
     var body: some View {
         ZStack {
@@ -22,7 +28,12 @@ struct SetupView: View {
                         .tag(0)
                     
                     // Page 2: Login-Aufforderung
-                    SetupPage2(showLoginView: $showLoginView)
+                    SetupPage2(
+                        showLoginView: $showLoginView,
+                        registrationLimitReached: $registrationLimitReached,
+                        accountCount: $accountCount,
+                        remainingRegistrations: $remainingRegistrations
+                    )
                         .tag(1)
                     
                     // Page 3: Support Discord
@@ -123,6 +134,51 @@ struct SetupView: View {
             })
             .environmentObject(tcf)
         }
+        .task {
+            await checkRegistrationLimit()
+        }
+    }
+    
+    private func checkRegistrationLimit() async {
+        // Get UUID from Keychain or UserDefaults
+        let keychainService = "com.zentra.deviceUUID"
+        let keychainAccount = "deviceUUID"
+        
+        var uuidToCheck = deviceUUID
+        
+        if uuidToCheck.isEmpty {
+            if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+                uuidToCheck = keychainUUID
+            } else if let defaultsUUID = UserDefaults.standard.string(forKey: "deviceUUID"), !defaultsUUID.isEmpty {
+                uuidToCheck = defaultsUUID
+            }
+        }
+        
+        guard !uuidToCheck.isEmpty else {
+            // No UUID yet, allow registration (will be generated)
+            await MainActor.run {
+                registrationLimitReached = false
+                isCheckingLimit = false
+            }
+            return
+        }
+        
+        do {
+            let response = try await serverManager.checkRegistrationLimit(deviceUUID: uuidToCheck)
+            
+            await MainActor.run {
+                registrationLimitReached = response.limit_reached
+                accountCount = response.account_count
+                remainingRegistrations = response.remaining_registrations
+                isCheckingLimit = false
+            }
+        } catch {
+            // On error, allow registration attempt (server will reject if limit reached)
+            await MainActor.run {
+                registrationLimitReached = false
+                isCheckingLimit = false
+            }
+        }
     }
 }
 
@@ -202,6 +258,9 @@ struct SetupPage1: View {
 
 struct SetupPage2: View {
     @Binding var showLoginView: Bool
+    @Binding var registrationLimitReached: Bool
+    @Binding var accountCount: Int
+    @Binding var remainingRegistrations: Int
     @EnvironmentObject var tcf: TCF
     
     var body: some View {
@@ -280,10 +339,49 @@ struct SetupPage2: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 20)
                 
-                Text("Du kannst dich auch später anmelden")
-                    .font(.system(size: 14))
-                    .foregroundColor(tcf.colors.text.opacity(0.6))
-                    .padding(.top, 8)
+                // Registration limit warning
+                if registrationLimitReached {
+                    VStack(spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(tcf.colors.error.opacity(0.8))
+                            Text("Registrierung nicht möglich")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(tcf.colors.text)
+                        }
+                        
+                        Text("Aus Sicherheitsgründen (Exploit-Schutz) ist dieses Gerät von weiteren Registrierungen ausgeschlossen.")
+                            .font(.system(size: 14))
+                            .foregroundColor(tcf.colors.text.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                        
+                        VStack(spacing: 4) {
+                            Text("Du hast bereits \(accountCount)/3 Accounts auf diesem Gerät erstellt.")
+                                .font(.system(size: 13))
+                                .foregroundColor(tcf.colors.text.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Für weitere Accounts kontaktiere bitte den Support.")
+                                .font(.system(size: 12))
+                                .foregroundColor(tcf.colors.text.opacity(0.6))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 4)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(tcf.colors.error.opacity(0.15))
+                    )
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                } else {
+                    Text("Du kannst dich auch später anmelden")
+                        .font(.system(size: 14))
+                        .foregroundColor(tcf.colors.text.opacity(0.6))
+                        .padding(.top, 8)
+                }
                 
                 Spacer().frame(height: 40)
             }

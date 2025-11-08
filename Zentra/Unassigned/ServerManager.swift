@@ -18,7 +18,7 @@ class ServerManager: ObservableObject {
     
     private init() {}
     
-    /// Fetch server status (online/offline)
+    /// Fetch server status (online/offline) with ping measurement
     func fetchServerStatus() async throws -> ServerStatus {
         guard let url = URL(string: "\(serverURL)/api/status") else {
             throw ServerError.invalidURL
@@ -32,7 +32,10 @@ class ServerManager: ObservableObject {
         let session = URLSession(configuration: config)
         
         do {
+            // Measure client-side ping time
+            let startTime = Date()
             let (data, response) = try await session.data(from: url)
+            let clientPingTime = Date().timeIntervalSince(startTime) * 1000  // Convert to ms
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ServerError.invalidResponse
@@ -45,7 +48,28 @@ class ServerManager: ObservableObject {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             
-            return try decoder.decode(ServerStatus.self, from: data)
+            var serverStatus = try decoder.decode(ServerStatus.self, from: data)
+            
+            // Use client-side ping if server didn't provide it, or combine both
+            // For now, we'll use client-side ping as it's more accurate for round-trip time
+            if let serverPing = serverStatus.ping_ms {
+                // Server provided ping, use client-side round-trip time (more accurate)
+                // We could also average them, but round-trip is more meaningful
+                return ServerStatus(
+                    online: serverStatus.online,
+                    timestamp: serverStatus.timestamp,
+                    message: serverStatus.message,
+                    ping_ms: round(clientPingTime * 100) / 100  // Round to 2 decimal places
+                )
+            } else {
+                // Server didn't provide ping, use client-side measurement
+                return ServerStatus(
+                    online: serverStatus.online,
+                    timestamp: serverStatus.timestamp,
+                    message: serverStatus.message,
+                    ping_ms: round(clientPingTime * 100) / 100
+                )
+            }
         } catch let error as ServerError {
             throw error
         } catch {
@@ -194,6 +218,166 @@ class ServerManager: ObservableObject {
             throw ServerError.invalidResponse
         }
     }
+    
+    /// Send device activation to server (which forwards to Discord)
+    func sendDeviceActivation(
+        deviceUUID: String,
+        deviceName: String,
+        deviceModel: String,
+        iosVersion: String,
+        appVersion: String,
+        buildNumber: String
+    ) async throws -> ActivationResponse {
+        guard let url = URL(string: "\(serverURL)/api/activation") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10.0
+        config.timeoutIntervalForResource = 15.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "device_uuid": deviceUUID,
+            "device_name": deviceName,
+            "device_model": deviceModel,
+            "ios_version": iosVersion,
+            "app_version": appVersion,
+            "build_number": buildNumber
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(ActivationResponse.self, from: data)
+            } else {
+                let errorResponse = try decoder.decode(ActivationResponse.self, from: data)
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
+    
+    /// Register new user account
+    func register(
+        username: String,
+        email: String,
+        password: String,
+        deviceUUID: String,
+        deviceName: String,
+        deviceModel: String,
+        iosVersion: String,
+        appVersion: String,
+        buildNumber: String
+    ) async throws -> RegisterResponse {
+        guard let url = URL(string: "\(serverURL)/api/auth/register") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 15.0
+        config.timeoutIntervalForResource = 20.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "username": username,
+            "email": email,
+            "password": password,
+            "device_uuid": deviceUUID,
+            "device_name": deviceName,
+            "device_model": deviceModel,
+            "ios_version": iosVersion,
+            "app_version": appVersion,
+            "build_number": buildNumber
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                return try decoder.decode(RegisterResponse.self, from: data)
+            } else if httpResponse.statusCode == 400 || httpResponse.statusCode == 409 {
+                // Bad request or conflict (email already exists)
+                return try decoder.decode(RegisterResponse.self, from: data)
+            } else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
+    
+    /// Check if device has reached registration limit
+    func checkRegistrationLimit(deviceUUID: String) async throws -> RegistrationLimitResponse {
+        guard let url = URL(string: "\(serverURL)/api/auth/check-limit") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["device_uuid": deviceUUID]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(RegistrationLimitResponse.self, from: data)
+            } else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
 }
 
 // MARK: - Data Models
@@ -202,6 +386,28 @@ struct ServerStatus: Codable {
     let online: Bool
     let timestamp: String
     let message: String
+    let ping_ms: Double?  // Ping in milliseconds (optional for backward compatibility)
+}
+
+struct ActivationResponse: Codable {
+    let success: Bool
+    let message: String
+    let device_uuid: String?
+}
+
+struct RegisterResponse: Codable {
+    let success: Bool
+    let token: String?
+    let message: String?
+    let device_uuid: String?
+}
+
+struct RegistrationLimitResponse: Codable {
+    let success: Bool
+    let limit_reached: Bool
+    let account_count: Int
+    let remaining_registrations: Int
+    let max_accounts: Int
 }
 
 struct ServerStats: Codable {

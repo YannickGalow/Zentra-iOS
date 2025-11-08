@@ -27,6 +27,8 @@ struct SettingsView: View {
     @State private var pendingThemeURL: URL? = nil
     @State private var showDeveloperInfo: Bool = false
     @State private var showLoginRequiredAlert: Bool = false
+    @State private var showUUIDCopiedToast: Bool = false
+    @AppStorage("deviceUUID") private var deviceUUID: String = ""
     
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var tcf: TCF
@@ -70,6 +72,8 @@ struct SettingsView: View {
                         discordLoggingCard
 
                         designCard
+                        
+                        supportCard
                     
                     if UserDefaults.standard.bool(forKey: "developerOptionsEnabled") {
                         developerOptionsCard
@@ -451,6 +455,123 @@ struct SettingsView: View {
         .liquidGlassCard()
     }
     
+    private var supportCard: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(spacing: 12) {
+                Rectangle()
+                    .fill(tcf.colors.accent)
+                    .frame(width: 4, height: 24)
+                    .cornerRadius(2)
+                Text("Support")
+                    .font(.title3.bold())
+                    .foregroundColor(tcf.colors.accent)
+            }
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Device UUID")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(tcf.colors.text.opacity(0.7))
+                
+                Text(getDeviceUUID())
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(tcf.colors.text)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.5)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(tcf.colors.accent.opacity(0.3), lineWidth: 1)
+                    )
+                
+                Button(action: {
+                    copyUUIDToClipboard()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.on.doc.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Copy UUID to Clipboard")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                }
+                .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .white))
+                .disabled(getDeviceUUID() == "Not set")
+                .opacity(getDeviceUUID() == "Not set" ? 0.6 : 1.0)
+            }
+        }
+        .padding(20)
+        .liquidGlassCard()
+        .overlay(
+            // Toast overlay
+            VStack {
+                Spacer()
+                if showUUIDCopiedToast {
+                    HStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.white)
+                        Text("UUID copied to clipboard")
+                            .foregroundColor(.white)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.bottom, 100)
+                }
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showUUIDCopiedToast)
+        )
+    }
+    
+    private func getDeviceUUID() -> String {
+        // Try multiple sources for UUID
+        if !deviceUUID.isEmpty {
+            return deviceUUID
+        }
+        
+        // Try UserDefaults directly
+        if let uuid = UserDefaults.standard.string(forKey: "deviceUUID"), !uuid.isEmpty {
+            return uuid
+        }
+        
+        return "Not set"
+    }
+    
+    private func copyUUIDToClipboard() {
+        let uuid = getDeviceUUID()
+        guard uuid != "Not set" else { return }
+        
+        // Copy to clipboard
+        UIPasteboard.general.string = uuid
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        // Show toast
+        withAnimation {
+            showUUIDCopiedToast = true
+        }
+        
+        // Hide toast after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation {
+                showUUIDCopiedToast = false
+            }
+        }
+    }
+    
     private var developerOptionsCard: some View {
         VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 12) {
@@ -725,6 +846,7 @@ struct DeveloperInfoView: View {
                         .foregroundColor(tcf.colors.text)
                     
                     VStack(spacing: 20) {
+                        InfoRow(title: "Device UUID", value: getDeviceUUID())
                         InfoRow(title: "App Name", value: appName)
                         InfoRow(title: "App Version", value: appVersion)
                         InfoRow(title: "Build Number", value: buildNumber)
@@ -787,8 +909,33 @@ struct DeveloperInfoView: View {
         return modelCode ?? UIDevice.current.model
     }
     
+    @AppStorage("deviceUUID") private var deviceUUID: String = ""
+    
     private var deviceName: String {
         UIDevice.current.name
+    }
+    
+    private func getDeviceUUID() -> String {
+        // Try multiple sources for UUID - Keychain has priority (survives app reinstall)
+        let keychainService = "com.zentra.deviceUUID"
+        let keychainAccount = "deviceUUID"
+        
+        // First check Keychain (persists after app reinstall)
+        if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+            return keychainUUID
+        }
+        
+        // Then check @AppStorage
+        if !deviceUUID.isEmpty {
+            return deviceUUID
+        }
+        
+        // Then check UserDefaults directly
+        if let uuid = UserDefaults.standard.string(forKey: "deviceUUID"), !uuid.isEmpty {
+            return uuid
+        }
+        
+        return "Not set"
     }
 }
 

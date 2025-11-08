@@ -6,6 +6,7 @@ struct LoginView: View {
 
     @State private var username = ""
     @State private var password = ""
+    @State private var showRegisterView = false
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("rememberLogin") var rememberLogin: Bool = false
     @AppStorage("useBiometrics") var useBiometrics: Bool = false
@@ -19,11 +20,14 @@ struct LoginView: View {
     @State private var isLoading = false
 
     @State private var showSavePasswordPrompt = false
+    @State private var registrationLimitReached = false
+    @State private var isCheckingLimit = false
 
     @EnvironmentObject var tcf: TCF
-    
+
     private let serverManager = ServerManager.shared
     private let keychainService = "com.example.LoginApp"
+    @AppStorage("deviceUUID") private var deviceUUID: String = ""
 
     var body: some View {
         ZStack {
@@ -280,39 +284,82 @@ struct LoginView: View {
                         ))
                         .disabled(isLoading)
 
-                        // Debug Button - Quick Admin Login
-                        Button(action: { debugLogin() }) {
-                            Image(systemName: "wrench.fill")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                        }
-                        .buttonStyle(LoginButtonStyle(
-                            backgroundColor: tcf.colors.accent.opacity(0.75),
-                            foregroundColor: .white
-                        ))
                     }
                     .padding(.top, 8)
+
+                    // Register Link (only show if limit not reached)
+                    if !registrationLimitReached {
+                        HStack {
+                            Text("Don't have an account?")
+                                .foregroundColor(tcf.colors.text.opacity(0.7))
+                            Button(action: { showRegisterView = true }) {
+                                Text("Register")
+                                    .foregroundColor(tcf.colors.accent)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .font(.subheadline)
+                        .padding(.top, 8)
+                    } else {
+                        VStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(tcf.colors.error.opacity(0.8))
+                                Text("Registrierung nicht möglich")
+                                    .foregroundColor(tcf.colors.text.opacity(0.8))
+                                    .fontWeight(.semibold)
+                            }
+                            .font(.caption)
+                            
+                            Text("Aus Sicherheitsgründen (Exploit-Schutz) ist dieses Gerät von weiteren Registrierungen ausgeschlossen.")
+                                .font(.caption2)
+                                .foregroundColor(tcf.colors.text.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                            
+                            Text("Bitte kontaktiere den Support für weitere Informationen.")
+                                .font(.caption2)
+                                .foregroundColor(tcf.colors.text.opacity(0.6))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(tcf.colors.error.opacity(0.15))
+                        )
+                        .padding(.top, 8)
+                    }
 
                     Spacer().frame(height: 40)
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 20)
-                .alert(isPresented: $showSavePasswordPrompt) {
-                    Alert(
-                        title: Text("Save Password?"),
-                        message: Text("Do you want to save the password for \(username)?"),
-                        primaryButton: .default(Text("Save"), action: {
-                            KeychainHelper.shared.save(password, service: keychainService, account: username)
-                            onLogin?()
-                        }),
-                        secondaryButton: .cancel(Text("Cancel"), action: { onLogin?() })
-                    )
-                }
+            }
+            .sheet(isPresented: $showRegisterView) {
+                RegisterView(onRegister: {
+                    showRegisterView = false
+                    onLogin?()
+                }, showLoginView: $showRegisterView)
+                    .environmentObject(tcf)
+            }
+            .task {
+                await checkRegistrationLimit()
+            }
+            .alert(isPresented: $showSavePasswordPrompt) {
+                Alert(
+                    title: Text("Save Password?"),
+                    message: Text("Do you want to save the password for \(username)?"),
+                    primaryButton: .default(Text("Save"), action: {
+                        KeychainHelper.shared.save(password, service: keychainService, account: username)
+                        onLogin?()
+                    }),
+                    secondaryButton: .cancel(Text("Cancel"), action: { onLogin?() })
+                )
             }
         }
     }
-
+    
     func performLogin() async {
         await MainActor.run {
             isLoading = true
@@ -333,16 +380,16 @@ struct LoginView: View {
                     self.showError = false
                     self.isLoading = false
                     
-                    if rememberLogin {
+                if rememberLogin {
                         // Save password to keychain
                         KeychainHelper.shared.save(password, service: keychainService, account: username)
-                        showSavePasswordPrompt = true
-                    } else {
-                        // Don't save password
-                        KeychainHelper.shared.delete(service: keychainService, account: username)
-                        onLogin?()
-                    }
+                    showSavePasswordPrompt = true
                 } else {
+                        // Don't save password
+                    KeychainHelper.shared.delete(service: keychainService, account: username)
+                    onLogin?()
+                }
+            } else {
                     // Login failed (shouldn't happen with proper server, but handle gracefully)
                     showError = true
                     errorMessage = authResponse.message
@@ -374,15 +421,6 @@ struct LoginView: View {
         }
     }
 
-    func debugLogin() {
-        // Debug login - fill credentials and attempt login
-        username = "admin"
-        password = "1234"
-        Task {
-            await performLogin()
-        }
-    }
-    
     /// Extract HTTP status code from ServerError
     private func extractHTTPStatusCode(from error: ServerError) -> Int? {
         switch error {
@@ -422,6 +460,43 @@ struct LoginView: View {
         } else {
             // No HTTP status code available (connection error, etc.)
             return String(format: "DBG-%05d-%04d", timestamp % 100000, (usernameHash + errorTypeHash) % 10000)
+        }
+    }
+    
+    private func checkRegistrationLimit() async {
+        // Get UUID from Keychain or UserDefaults
+        let keychainService = "com.zentra.deviceUUID"
+        let keychainAccount = "deviceUUID"
+        
+        var uuidToCheck = deviceUUID
+        
+        if uuidToCheck.isEmpty {
+            if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+                uuidToCheck = keychainUUID
+            } else if let defaultsUUID = UserDefaults.standard.string(forKey: "deviceUUID"), !defaultsUUID.isEmpty {
+                uuidToCheck = defaultsUUID
+            }
+        }
+        
+        guard !uuidToCheck.isEmpty else {
+            // No UUID yet, allow registration (will be generated)
+            await MainActor.run {
+                registrationLimitReached = false
+            }
+            return
+        }
+        
+        do {
+            let response = try await serverManager.checkRegistrationLimit(deviceUUID: uuidToCheck)
+            
+            await MainActor.run {
+                registrationLimitReached = response.limit_reached
+            }
+        } catch {
+            // On error, allow registration attempt (server will reject if limit reached)
+            await MainActor.run {
+                registrationLimitReached = false
+            }
         }
     }
 }
@@ -479,5 +554,5 @@ private struct LoginButtonStyle: ButtonStyle {
             }
             .conditionalAnimation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
+    
 }
-

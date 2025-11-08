@@ -93,7 +93,7 @@ struct Sidebar: View {
                                 .frame(width: 70, height: 70)
                             
                             Image(systemName: isLoggedIn ? "person.crop.circle.fill" : "person.crop.circle")
-                                .resizable()
+                        .resizable()
                                 .frame(width: 60, height: 60)
                                 .foregroundColor(tcf.colors.accent)
                                 .shadow(color: tcf.colors.accent.opacity(0.6), radius: 12, x: 0, y: 6)
