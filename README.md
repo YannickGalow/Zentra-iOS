@@ -56,6 +56,8 @@
 - ✅ Automatic status updates every 10 seconds
 - ✅ Pull-to-refresh support
 - ✅ Custom status messages support
+- ✅ **Login required** - Only visible when logged in
+- ✅ Login prompt shown when not authenticated
 
 ---
 
@@ -67,6 +69,12 @@
 - 🌊 **Liquid Glass** (Default) - Deep blue with glassmorphism effects
 - 🌅 **Liquid Glass Light** - Light variant with softer colors
 - 🌑 **Liquid Glass Dark** - Dark variant with enhanced contrast
+
+**Smart Theme Selection:**
+- 🎯 **Auto-detection** - Theme automatically matches system appearance on first launch
+- 🌙 **Dark Mode** → Liquid Glass Dark Theme
+- ☀️ **Light Mode** → Liquid Glass Light Theme
+- 🔄 **Manual Override** - Change theme anytime in Settings
 
 **Custom Themes:**
 - 📁 Import your own theme configurations via `.gtheme` files
@@ -93,6 +101,9 @@
      - TCF version
      - Bundle identifier
      - Device information
+   - 🔔 **Send Test Notification**
+     - Test push notification functionality
+     - Verify notification permissions
 
 ---
 
@@ -127,8 +138,17 @@
 
 #### 🚀 First Launch
 
-**1. App Start**
-- The app starts directly without requiring login
+**1. Setup Process**
+- On first launch, you'll see a **4-page setup guide**:
+  - **Page 1:** App introduction and features overview
+  - **Page 2:** Login prompt (optional)
+  - **Page 3:** Support and Discord community information
+  - **Page 4:** Ready to use message
+- Theme automatically matches your system appearance (Dark/Light Mode)
+- Swipe or tap "Weiter" to navigate through setup
+
+**2. App Start**
+- After setup, the app starts directly
 - You can use the app without logging in
 - To access login-protected features, log in via the side menu
 
@@ -144,11 +164,14 @@
 **3. Login** (Optional)
 - Open the side menu
 - Tap **"Login"** in the Profile section
+- Or tap "Login" on the Dashboard if not logged in
+- Server-based authentication with token management
 - Default test credentials:
   - Username: `admin` / Password: `1234`
   - Username: `user` / Password: `1234`
 - Enable "Remember login" for persistence
 - Enable "Face ID / Passcode" for added security
+- **Note:** Login is required to access Server Statistics and Settings
 
 ---
 
@@ -403,14 +426,21 @@ TextField("Input", text: $text)
 - `LocalAuthentication` - Biometric authentication
 
 **Current Implementation:**
-- App starts without requiring login
-- Login is optional and accessible via SideMenu
-- Hardcoded credentials for testing:
+- **Server-based authentication** - Token-based session management
+- App starts without requiring login (after setup)
+- Login is optional but required for certain features
+- Server authentication endpoints:
+  - `/api/auth/login` - User authentication
+  - `/api/auth/logout` - Session termination
+  - `/api/auth/verify` - Token validation
+- Default test credentials:
   - `admin` / `1234`
   - `user` / `1234`
 - Credentials stored in iOS Keychain
-- Session management via `@AppStorage`
+- Session management via `@AppStorage` and server tokens
 - Biometric authentication support
+- **Auto-logout protection** - Token validation prevents unauthorized access
+- **Logout warning** - Users informed about settings reset on logout
 
 **Security Example:**
 ```swift
@@ -546,9 +576,15 @@ struct MyView: View {
 #### 🧪 Testing
 
 **Manual Testing Checklist:**
-- [ ] App starts without requiring login
+- [ ] Setup process displays correctly on first launch
+- [ ] Theme matches system appearance on first start
+- [ ] App starts without requiring login (after setup)
 - [ ] Side menu displays correctly
-- [ ] Login flow works correctly
+- [ ] Login flow works correctly with server authentication
+- [ ] Token validation works on app start
+- [ ] Logout warning displays correctly
+- [ ] Settings are disabled when not logged in
+- [ ] Server Statistics only visible when logged in
 - [ ] Theme switching functions properly
 - [ ] Navigation works on all pages
 - [ ] Discord webhooks send correctly
@@ -575,13 +611,19 @@ struct MyView: View {
 **Endpoints:**
 - `/api/status` - Server status (online/offline, custom messages)
 - `/api/stats` - Detailed server statistics (if needed)
+- `/api/auth/login` - User authentication (POST)
+- `/api/auth/logout` - Session termination (POST, requires Bearer token)
+- `/api/auth/verify` - Token validation (POST, requires Bearer token)
+- `/api/control` - Server control (start/stop/set_status)
 
 **Implementation Notes:**
 - Async/await pattern for network requests
-- URLSession with custom timeout configuration
+- URLSession with custom timeout configuration (5s request, 10s resource)
 - Automatic status refresh every 10 seconds
 - Task cancellation on view disappearance
 - Graceful error handling (network errors treated as offline)
+- Token-based authentication with automatic validation
+- Error codes displayed for debugging (format: `DBG-XXXXX-XXXX-HTTPXXX`)
 
 > **Note:** Server endpoints and configuration are private and restricted to authorized access only.
 
@@ -692,16 +734,24 @@ struct MyView: View {
 - ✅ **Password-protected themes** - Encrypt themes with passwords
 - ✅ **`.gtheme` file format** - Advanced theme format with individual color definitions
 - ✅ **File validation** - Only `.gtheme` files accepted, corruption detection
-- ✅ **Server Statistics Dashboard** - Real-time server status monitoring
+- ✅ **Smart Theme Selection** - Automatically matches system appearance on first launch
+- ✅ **Setup Process** - 4-page onboarding guide on first launch
+- ✅ **Server Statistics Dashboard** - Real-time server status monitoring (login required)
+- ✅ **Server-based Authentication** - Token-based session management
+- ✅ **Login Required Card** - Beautiful login prompt with support links
 - ✅ **Developer Options** - Hidden settings activated by 5-tap gesture
+- ✅ **Test Notification** - Send test notifications from Developer Options
 - ✅ Discord Integration Settings with conditional display
 - ✅ Custom Discord message support
 - ✅ Theme loading animation
-- ✅ Optional authentication (app starts without login requirement)
-- ✅ Login integrated in side menu
+- ✅ Optional authentication (app starts without login requirement after setup)
+- ✅ Login integrated in side menu and dashboard
 - ✅ Complete English localization
 - ✅ Enhanced animation controls throughout the app
 - ✅ **Server integration** - Local server communication for status monitoring
+- ✅ **Error Code System** - Debug error codes with HTTP status codes
+- ✅ **Logout Warning** - Users informed about settings reset
+- ✅ **Protected Settings** - Settings disabled when not logged in
 
 > **Note:** App purpose and identity are yet to be determined
 
@@ -742,6 +792,15 @@ When reporting issues, please include:
 <div align="center">
 
 **Last updated:** November 8th, 2025
+
+**Recent Updates:**
+- ✅ Setup process with 4 pages
+- ✅ Server-based authentication system
+- ✅ Smart theme selection based on system appearance
+- ✅ Login Required Card with support links
+- ✅ Developer Options expanded (Test Notification)
+- ✅ Protected features (Settings, Server Statistics)
+- ✅ Discord support link updated
 
 Made with ❤️ by Yannick Galow
 
