@@ -13,10 +13,15 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 ### Key Features
 
 #### 🔧 Features (Status)
+- **Server Statistics Dashboard**: Real-time server status monitoring
+  - Live server status display (Online/Offline)
+  - Automatic status updates every 10 seconds
+  - Pull-to-refresh support
+  - Custom status messages support
 - **Bazaar Tracker**: *Removed - buttons remain in sidebar but disabled*
 - **Bazaar Profit Calculator**: *Removed - buttons remain in sidebar but disabled*
 
-*Note: These features have been removed. Navigation buttons remain visible but non-functional. The app's primary purpose is yet to be determined.*
+*Note: Bazaar features have been removed. Navigation buttons remain visible but non-functional. The app's primary purpose is yet to be determined.*
 
 #### 🎨 Theming System (TCF - Theme Controlling Framework)
 - **Pre-installed Themes**:
@@ -77,7 +82,7 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
    - Swipe from the **left edge** of the screen to open the menu
    - Or tap the **menu icon** (☰) in the top-left corner
    - Navigate between:
-     - **Home**: Main dashboard with animated background
+     - **Dashboard**: Server Statistics dashboard with real-time status
      - **Bazaar Tracker**: *Currently disabled - feature removed*
      - **Bazaar Profit**: *Currently disabled - feature removed*
      - **Settings**: Configure app preferences
@@ -190,6 +195,16 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - Use the menu icon if swipe gesture doesn't work
 - Close and reopen the app if menu gets stuck
 
+### Server Integration
+
+- **Server Status Monitoring**: The app connects to a local server for status information
+- **Real-time Updates**: Server status is automatically refreshed every 10 seconds
+- **Custom Status Messages**: Server administrators can set custom status messages
+- **Offline Detection**: App automatically detects when the server is unavailable
+- **Pull-to-Refresh**: Manually refresh server status by pulling down on the dashboard
+
+*Note: Server access is restricted to authorized administrators only.*
+
 ### Privacy & Security
 
 - **Data Storage**: All data is stored locally on your device
@@ -197,6 +212,7 @@ Zentra is a sleek iOS application with a beautiful liquid glass design featuring
 - **No Telemetry**: The app doesn't collect personal data
 - **Offline Support**: Core features work without internet connection
 - **Discord Integration**: Only sends data you explicitly enable
+- **Server Communication**: Secure communication with local server only
 
 ### Support & Feedback
 
@@ -250,7 +266,8 @@ Zentra/
 │   ├── Links.swift           # External link handlers
 │   ├── PrimaryButtonStyle.swift  # Reusable button styles
 │   ├── AnimationHelper.swift    # Conditional animation utilities
-│   └── TrademarkInfo.swift   # App branding information
+│   ├── TrademarkInfo.swift   # App branding information
+│   └── ServerManager.swift  # Server API communication manager
 │
 └── Assets.xcassets/         # App icons and images
 ```
@@ -720,7 +737,10 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 **MainView.swift**:
 - Main container view
 - Page routing logic
-- Nebula background animation
+- Server Statistics Dashboard
+- Server status card with real-time updates
+- Auto-refresh functionality (10-second intervals)
+- Pull-to-refresh support
 - Side menu integration
 - Gesture handling
 
@@ -802,15 +822,33 @@ xcrun simctl launch <DEVICE_ID> gv.Zentra
 
 ### API Integration
 
-#### External API Integration
+#### Server API Integration
+
+**ServerManager.swift**:
+- Manages communication with local server
+- Fetches server status and statistics
+- Automatic retry and error handling
+- Timeout configuration (5s request, 10s resource)
+- Network error handling (treats as offline)
 
 **Endpoints Used**:
-- *Bazaar features removed - API integration currently disabled*
+- `/api/status` - Server status (online/offline, custom messages)
+- `/api/stats` - Detailed server statistics (if needed)
 
 **Implementation Notes**:
-- Async/await pattern (used in Discord integration)
-- Error handling with retries
-- Background refresh support (prepared for future features)
+- Async/await pattern for network requests
+- URLSession with custom timeout configuration
+- Automatic status refresh every 10 seconds
+- Task cancellation on view disappearance
+- Graceful error handling (network errors treated as offline)
+
+**Server Communication**:
+- Local server connection only
+- Secure HTTP communication
+- CORS support for cross-origin requests
+- Custom status message support via API
+
+*Note: Server endpoints and configuration are private and restricted to authorized access only.*
 
 ### Dependencies
 
@@ -935,6 +973,12 @@ This project is for development and testing purposes.
 - **Password-protected themes** - Encrypt themes with passwords
 - **`.gtheme` file format** - Advanced theme format with individual color definitions
 - **File validation** - Only `.gtheme` files accepted, corruption detection for renamed files
+- **Server Statistics Dashboard** - Real-time server status monitoring
+  - Live status display (Online/Offline)
+  - Automatic refresh every 10 seconds
+  - Pull-to-refresh support
+  - Custom status message support
+  - Server connection management
 - **Developer Options** - Hidden settings activated by 5-tap gesture on profile avatar
   - Performance Settings (animation toggle)
   - Developer Information display (app version, TCF version, device info)
@@ -949,6 +993,7 @@ This project is for development and testing purposes.
 - Complete English localization (translated from German)
 - Enhanced animation controls throughout the app
 - **Bazaar features removed** - Views removed, buttons remain but disabled
+- **Server integration** - Local server communication for status monitoring
 - *Note: App purpose and identity are yet to be determined*
 
 ---
@@ -985,4 +1030,4 @@ When reporting issues, please include:
 
 ---
 
-*Last updated: 2025*
+*Last updated: November 8th 2025*

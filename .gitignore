@@ -92,3 +92,14 @@ iOSInjectionProject/
 # macOS
 .DS_Store
 
+TERMIUS_KEY_SETUP.md
+stop_ssh_server.sh
+stop_server.sh
+start_ssh_server.sh
+start_server.sh
+ssh_server.py
+SSH_CONNECTION_GUIDE.md
+setup_ssh_key.sh
+server.py
+build.log
+.gitignore

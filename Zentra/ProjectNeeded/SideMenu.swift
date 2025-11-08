@@ -202,7 +202,7 @@ struct Sidebar: View {
                         VStack(spacing: 8) {
                             SidebarNavButton(
                                 icon: "house.fill",
-                                label: "Home",
+                                label: "Dashboard",
                                 isSelected: selectedPage == "start"
                             ) {
                                 conditionalWithAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
