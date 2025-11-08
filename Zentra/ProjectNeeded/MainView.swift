@@ -15,6 +15,8 @@ struct MainView: View {
     @Binding var selectedPage: String?
     @State private var showMenu = false
     @AppStorage("animationsEnabled") private var animationsEnabled: Bool = true
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+    @State private var showLoginView = false
     @EnvironmentObject var tcf: TCF
 
     var body: some View {
@@ -25,20 +27,37 @@ struct MainView: View {
 
                     if !showMenu {
                         if selectedPage == nil || selectedPage == "start" {
-                            // Server Statistics Dashboard
-                            VStack(alignment: .leading, spacing: 0) {
-                                // Server Status Card - positioned below header
-                                ServerStatusCard()
-                                    .environmentObject(tcf)
-                                    .padding(.horizontal, 24)
-                                    .padding(.top, 100) // Space for header (60) + some padding
-                                
-                                Spacer()
+                            if isLoggedIn {
+                                // Server Statistics Dashboard - only shown when logged in
+                                VStack(alignment: .leading, spacing: 0) {
+                                    // Server Status Card - positioned below header
+                                    ServerStatusCard()
+                                        .environmentObject(tcf)
+                                        .padding(.horizontal, 24)
+                                        .padding(.top, 100) // Space for header (60) + some padding
+                                    
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                                .frame(maxWidth: 510)
+                                .transition(animationsEnabled ? .opacity : .identity)
+                                .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
+                            } else {
+                                // Login Required Message - shown when not logged in
+                                VStack(alignment: .center, spacing: 24) {
+                                    Spacer(minLength: 100)
+                                    
+                                    LoginRequiredCard(showLoginView: $showLoginView)
+                                        .environmentObject(tcf)
+                                        .padding(.horizontal, 24)
+                                    
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                                .frame(maxWidth: 510)
+                                .transition(animationsEnabled ? .opacity : .identity)
+                                .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            .frame(maxWidth: 510)
-                            .transition(animationsEnabled ? .opacity : .identity)
-                            .conditionalAnimation(.easeInOut(duration: 0.3), value: showMenu)
                     } else if selectedPage == "bazaar" || selectedPage == "bazaarProfit" {
                         // Views removed - functionality disabled
                         EmptyView()
@@ -47,7 +66,7 @@ struct MainView: View {
 
                 VStack {
                     ZStack {
-                        Text(selectedPage == nil || selectedPage == "start" ? "Server Statistics" : "")
+                        Text(selectedPage == nil || selectedPage == "start" ? (isLoggedIn ? "Server Statistics" : "") : "")
                         .font(.system(size: 32, weight: .bold))
                         .multilineTextAlignment(.center)
                         .lineLimit(nil)
@@ -97,7 +116,7 @@ struct MainView: View {
                         }
                         .zIndex(1)
                 }
-
+                
                 if !showMenu {
                     Color.clear
                         .frame(width: 30)
@@ -130,6 +149,15 @@ struct MainView: View {
                         )
                         .allowsHitTesting(true)
                 }
+            }
+            .sheet(isPresented: $showLoginView) {
+                LoginView(onLogin: {
+                    conditionalWithAnimation {
+                        isLoggedIn = true
+                        showLoginView = false
+                    }
+                })
+                .environmentObject(tcf)
             }
             .onChange(of: selectedPage) { newPage in
                 if newPage != nil && newPage != "start" {
@@ -434,6 +462,239 @@ extension Date {
             }()
         }
         return StaticFormatter.formatter.string(from: self)
+    }
+}
+
+// MARK: - Login Required Card
+
+struct LoginRequiredCard: View {
+    @Binding var showLoginView: Bool
+    @EnvironmentObject var tcf: TCF
+    
+    var body: some View {
+        VStack(spacing: 32) {
+            // Icon with animated gradient
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                tcf.colors.accent.opacity(0.4),
+                                tcf.colors.accent.opacity(0.2),
+                                tcf.colors.accent.opacity(0.1),
+                                .clear
+                            ],
+                            center: .center,
+                            startRadius: 15,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 140, height: 140)
+                
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                tcf.colors.accent.opacity(0.3),
+                                tcf.colors.accent.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "person.badge.key.fill")
+                    .font(.system(size: 55, weight: .medium))
+                    .foregroundColor(tcf.colors.accent)
+            }
+            
+            VStack(spacing: 16) {
+                Text("Login Required")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(tcf.colors.text)
+                
+                Text("Please log in to access server statistics and all features.")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(tcf.colors.text.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .padding(.horizontal, 8)
+            }
+            
+            // Benefits List
+            VStack(alignment: .leading, spacing: 12) {
+                LoginBenefitRow(
+                    icon: "server.rack",
+                    title: "Server Statistics",
+                    description: "Monitor your servers in real-time"
+                )
+                
+                LoginBenefitRow(
+                    icon: "slider.horizontal.3",
+                    title: "Custom Settings",
+                    description: "Personalize your experience"
+                )
+                
+                LoginBenefitRow(
+                    icon: "paintbrush.fill",
+                    title: "Theme Management",
+                    description: "Access all theme features"
+                )
+            }
+            .padding(.vertical, 8)
+            
+            // Login Button
+            Button(action: {
+                showLoginView = true
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.badge.key.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("Login Now")
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+            }
+            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .white))
+            
+            // Support Section
+            VStack(spacing: 12) {
+                Divider()
+                    .background(tcf.colors.text.opacity(0.2))
+                
+                Text("Need Help?")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(tcf.colors.text.opacity(0.7))
+                    .textCase(.uppercase)
+                    .tracking(1)
+                
+                HStack(spacing: 20) {
+                    SupportButton(
+                        icon: "message.fill",
+                        label: "Discord",
+                        color: Color(red: 0.4, green: 0.5, blue: 0.9)
+                    ) {
+                        if let url = URL(string: "https://discord.gg/qqdjXgcDh9") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    
+                    SupportButton(
+                        icon: "questionmark.circle.fill",
+                        label: "Support",
+                        color: tcf.colors.accent
+                    ) {
+                        // Could open support page or email
+                        if let url = URL(string: "mailto:support@zentra.app") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 8)
+        }
+        .padding(36)
+        .liquidGlassCard()
+    }
+}
+
+// MARK: - Login Benefit Row
+
+struct LoginBenefitRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    @EnvironmentObject var tcf: TCF
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(tcf.colors.accent.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(tcf.colors.accent)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(tcf.colors.text)
+                
+                Text(description)
+                    .font(.system(size: 13))
+                    .foregroundColor(tcf.colors.text.opacity(0.7))
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+    }
+}
+
+// MARK: - Support Button
+
+struct SupportButton: View {
+    let icon: String
+    let label: String
+    let color: Color
+    let action: () -> Void
+    @EnvironmentObject var tcf: TCF
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.2))
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(color)
+                }
+                
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(tcf.colors.text.opacity(0.8))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(SupportButtonStyle())
+    }
+}
+
+private struct SupportButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.2),
+                                .white.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .conditionalAnimation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 

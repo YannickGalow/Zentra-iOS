@@ -86,6 +86,114 @@ class ServerManager: ObservableObject {
             throw ServerError.invalidResponse
         }
     }
+    
+    /// Authenticate user with server
+    func login(username: String, password: String) async throws -> AuthResponse {
+        guard let url = URL(string: "\(serverURL)/api/auth/login") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["username": username, "password": password]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(AuthResponse.self, from: data)
+            } else if httpResponse.statusCode == 401 {
+                let errorResponse = try decoder.decode(AuthErrorResponse.self, from: data)
+                throw ServerError.authenticationError(errorResponse.message)
+            } else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
+    
+    /// Logout user from server
+    func logout(token: String) async throws {
+        guard let url = URL(string: "\(serverURL)/api/auth/logout") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            guard httpResponse.statusCode == 200 else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
+    
+    /// Verify authentication token
+    func verifyToken(_ token: String) async throws -> TokenVerification {
+        guard let url = URL(string: "\(serverURL)/api/auth/verify") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(TokenVerification.self, from: data)
+            } else {
+                return try decoder.decode(TokenVerification.self, from: data)
+            }
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
 }
 
 // MARK: - Data Models
@@ -120,6 +228,7 @@ enum ServerError: LocalizedError {
     case invalidResponse
     case httpError(Int)
     case decodingError
+    case authenticationError(String)
     
     var errorDescription: String? {
         switch self {
@@ -131,7 +240,30 @@ enum ServerError: LocalizedError {
             return "HTTP error: \(code)"
         case .decodingError:
             return "Failed to decode server response"
+        case .authenticationError(let message):
+            return message
         }
     }
+}
+
+// MARK: - Authentication Models
+
+struct AuthResponse: Codable {
+    let success: Bool
+    let token: String?
+    let username: String?
+    let message: String
+}
+
+struct AuthErrorResponse: Codable {
+    let success: Bool
+    let message: String
+}
+
+struct TokenVerification: Codable {
+    let success: Bool
+    let username: String?
+    let valid: Bool
+    let message: String?
 }
 

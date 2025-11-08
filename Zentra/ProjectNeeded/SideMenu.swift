@@ -3,6 +3,7 @@ import SwiftUI
 struct Sidebar: View {
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("currentUsername") var currentUsername: String = ""
+    @AppStorage("authToken") var authToken: String = ""
     @AppStorage("trustUnknownLinks") var trustUnknownLinks: Bool = false
 
     @Binding var selectedPage: String?
@@ -234,10 +235,14 @@ struct Sidebar: View {
                             SidebarNavButton(
                                 icon: "gearshape.fill",
                                 label: "Settings",
-                                isSelected: false
-                            ) {
-                                showSettings = true
-                            }
+                                isSelected: false,
+                                action: {
+                                    if isLoggedIn {
+                                        showSettings = true
+                                    }
+                                },
+                                isDisabled: !isLoggedIn
+                            )
                         }
                         .padding(.horizontal, 32)
                         .padding(.bottom, 40)
@@ -360,16 +365,14 @@ struct Sidebar: View {
                 Text("Cancel")
             }
             Button(role: .destructive) {
-                conditionalWithAnimation {
-                    let usernameToLog = currentUsername
-                    isLoggedIn = false
-                    currentUsername = ""
-                    selectedPage = "start"
-                    Task { await webhookManager.logLogout(username: usernameToLog) }
+                Task {
+                    await performLogout()
                 }
             } label: {
                 Text("Sign Out")
             }
+        } message: {
+            Text("When you sign out, all your settings will be reset to default values. This includes themes, Discord webhooks, privacy settings, and other preferences. You will need to configure them again after logging back in.")
         }
         .alert("Open \(pendingLinkName)?", isPresented: $showLinkConfirmation) {
             Button("Cancel", role: .cancel) {
@@ -394,6 +397,56 @@ struct Sidebar: View {
             pendingLinkURL = url
             pendingLinkAppURL = appURL
             showLinkConfirmation = true
+        }
+    }
+    
+    private func performLogout() async {
+        let usernameToLog = currentUsername
+        let tokenToLogout = authToken
+        
+        // Logout from server if token exists
+        if !tokenToLogout.isEmpty {
+            do {
+                try await ServerManager.shared.logout(token: tokenToLogout)
+            } catch {
+                // Server logout failed, but continue with local logout
+                print("⚠️ Server logout failed: \(error)")
+            }
+        }
+        
+        // Reset all settings to default
+        await MainActor.run {
+            conditionalWithAnimation {
+                // Reset authentication
+                isLoggedIn = false
+                currentUsername = ""
+                authToken = ""
+                
+                // Reset privacy settings
+                trustUnknownLinks = false
+                
+                // Reset theme to light (white theme)
+                tcf.selectedThemeId = "light"
+                
+                // Reset all other settings
+                UserDefaults.standard.set(false, forKey: "rememberLogin")
+                UserDefaults.standard.set(false, forKey: "useBiometrics")
+                UserDefaults.standard.set("", forKey: "discordWebhookURL")
+                UserDefaults.standard.set(false, forKey: "logLoginLogout")
+                UserDefaults.standard.set(false, forKey: "logThemeChanges")
+                UserDefaults.standard.set(false, forKey: "logSettingsChanges")
+                UserDefaults.standard.set(true, forKey: "animationsEnabled")
+                UserDefaults.standard.set(false, forKey: "showCustomDiscordMessage")
+                UserDefaults.standard.set(false, forKey: "developerOptionsEnabled")
+                
+                // Clear keychain
+                KeychainHelper.shared.delete(service: "com.example.LoginApp", account: usernameToLog)
+                
+                selectedPage = "start"
+                
+                // Log logout to Discord
+                Task { await webhookManager.logLogout(username: usernameToLog) }
+            }
         }
     }
     

@@ -5,6 +5,7 @@ import UserNotifications
 import Darwin
 
 struct SettingsView: View {
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("rememberLogin") var rememberLogin: Bool = false
     @AppStorage("trustUnknownLinks") var trustUnknownLinks: Bool = false
     @AppStorage("useBiometrics") var useBiometrics: Bool = false
@@ -25,6 +26,7 @@ struct SettingsView: View {
     @State private var themePassword: String = ""
     @State private var pendingThemeURL: URL? = nil
     @State private var showDeveloperInfo: Bool = false
+    @State private var showLoginRequiredAlert: Bool = false
     
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var tcf: TCF
@@ -40,6 +42,26 @@ struct SettingsView: View {
                             .foregroundColor(tcf.colors.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 24)
+                        
+                        if !isLoggedIn {
+                            VStack(spacing: 12) {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(tcf.colors.text.opacity(0.5))
+                                
+                                Text("Login Required")
+                                    .font(.headline)
+                                    .foregroundColor(tcf.colors.text.opacity(0.7))
+                                
+                                Text("Please log in to access settings.")
+                                    .font(.subheadline)
+                                    .foregroundColor(tcf.colors.text.opacity(0.6))
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                            .liquidGlassCard()
+                        }
 
                         anmeldungCard
 
@@ -52,16 +74,6 @@ struct SettingsView: View {
                     if UserDefaults.standard.bool(forKey: "developerOptionsEnabled") {
                         developerOptionsCard
                     }
-
-                    Button("Send Test Notification") {
-                        triggerTestNotification()
-                    }
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
-                    .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .white))
-                    .padding(.top, 24)
                     
                     Spacer(minLength: 20)
                     
@@ -73,8 +85,9 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 60)
-                .opacity(isChangingTheme ? (animationsEnabled ? 0.3 : 0.5) : 1.0)
-                .blur(radius: isChangingTheme ? (animationsEnabled ? 3 : 0) : 0)
+                .opacity(isChangingTheme ? (animationsEnabled ? 0.3 : 0.5) : (isLoggedIn ? 1.0 : 0.5))
+                .blur(radius: isChangingTheme ? (animationsEnabled ? 3 : 0) : (isLoggedIn ? 0 : 2))
+                .disabled(!isLoggedIn)
             }
             .background(tcf.colors.background.ignoresSafeArea())
             
@@ -100,6 +113,11 @@ struct SettingsView: View {
                     }
                     .foregroundColor(tcf.colors.accent)
                 }
+            }
+            .alert("Login Required", isPresented: $showLoginRequiredAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Please log in to access settings.")
             }
             .alert(isPresented: $showDeleteConfirmation) {
                 Alert(
@@ -148,10 +166,25 @@ struct SettingsView: View {
             )
             .environmentObject(tcf)
         }
-        .sheet(isPresented: $showDeveloperInfo) {
+            .sheet(isPresented: $showDeveloperInfo) {
             DeveloperInfoView()
                 .environmentObject(tcf)
         }
+        .alert("Login Required", isPresented: $showLoginRequiredAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Please log in to change settings.")
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func checkLoginRequired() -> Bool {
+        if !isLoggedIn {
+            showLoginRequiredAlert = true
+            return false
+        }
+        return true
     }
 
     private var anmeldungCard: some View {
@@ -166,7 +199,12 @@ struct SettingsView: View {
                     .font(.title3.bold())
                     .foregroundColor(tcf.colors.accent)
             }
-            SettingsToggleRow(label: "Remember login", isOn: $rememberLogin) { newValue in
+            SettingsToggleRow(
+                label: "Remember login",
+                isOn: $rememberLogin,
+                isDisabled: !isLoggedIn
+            ) { newValue in
+                guard checkLoginRequired() else { return }
                 self.handleRememberLoginChanged(newValue)
             }
         }
@@ -187,11 +225,21 @@ struct SettingsView: View {
             }
 
             VStack(spacing: 20) {
-                SettingsToggleRow(label: "Trust links from unknown sources", isOn: $trustUnknownLinks) { newValue in
+                SettingsToggleRow(
+                    label: "Trust links from unknown sources",
+                    isOn: $trustUnknownLinks,
+                    isDisabled: !isLoggedIn
+                ) { newValue in
+                    guard checkLoginRequired() else { return }
                     self.handleTrustUnknownLinksChanged(newValue)
                 }
 
-                SettingsToggleRow(label: "Enable Face ID / Passcode protection", isOn: $useBiometrics) { newValue in
+                SettingsToggleRow(
+                    label: "Enable Face ID / Passcode protection",
+                    isOn: $useBiometrics,
+                    isDisabled: !isLoggedIn
+                ) { newValue in
+                    guard checkLoginRequired() else { return }
                     self.handleUseBiometricsChanged(newValue)
                 }
             }
@@ -219,31 +267,47 @@ struct SettingsView: View {
                     .autocapitalization(.none)
                     .padding()
                     .liquidGlassBackground(cornerRadius: 12)
-                    .foregroundColor(tcf.colors.text)
+                    .foregroundColor(isLoggedIn ? tcf.colors.text : tcf.colors.text.opacity(0.5))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
                     )
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture(count: 1) {
-                        #if canImport(UIKit)
-                        if let string = UIPasteboard.general.string, let url = URL(string: string), url.scheme?.hasPrefix("http") == true {
-                            discordWebhookURL = string
+                    .disabled(!isLoggedIn)
+                if isLoggedIn {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 1) {
+                            #if canImport(UIKit)
+                            if let string = UIPasteboard.general.string, let url = URL(string: string), url.scheme?.hasPrefix("http") == true {
+                                discordWebhookURL = string
+                            }
+                            #endif
                         }
-                        #endif
-                    }
-                    .onTapGesture(count: 2) {
-                        discordWebhookURL = ""
-                    }
+                        .onTapGesture(count: 2) {
+                            discordWebhookURL = ""
+                        }
+                } else {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            showLoginRequiredAlert = true
+                        }
+                }
             }
+            .opacity(isLoggedIn ? 1.0 : 0.6)
 
             // Only show settings when valid webhook URL is entered
             if let webhookURL = URL(string: discordWebhookURL),
                webhookURL.absoluteString.contains("discord.com/api/webhooks/") {
 
                 // Toggle to enable/disable custom message feature
-                SettingsToggleRow(label: "Enable quick messages text field", isOn: $showCustomDiscordMessage)
+                SettingsToggleRow(
+                    label: "Enable quick messages text field",
+                    isOn: $showCustomDiscordMessage,
+                    isDisabled: !isLoggedIn
+                ) { newValue in
+                    guard checkLoginRequired() else { return }
+                }
 
                 // Custom message text field (only shown when enabled)
                 if showCustomDiscordMessage {
@@ -260,15 +324,18 @@ struct SettingsView: View {
                                     .fill(.ultraThinMaterial)
                                     .opacity(0.6)
                             )
-                            .foregroundColor(tcf.colors.text)
+                            .foregroundColor(isLoggedIn ? tcf.colors.text : tcf.colors.text.opacity(0.5))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
                             )
                             .lineLimit(3...6)
+                            .disabled(!isLoggedIn)
+                            .opacity(isLoggedIn ? 1.0 : 0.6)
                     }
 
                     Button("Send custom message") {
+                        guard checkLoginRequired() else { return }
                         guard !customDiscordMessage.isEmpty else { return }
                         Task {
                             await webhookManager.logCustomMessage(text: customDiscordMessage)
@@ -281,13 +348,32 @@ struct SettingsView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 24) {
-                    SettingsToggleRow(label: "Post login/logout", isOn: $logLoginLogout)
-                    SettingsToggleRow(label: "Post theme changes", isOn: $logThemeChanges)
-                    SettingsToggleRow(label: "Post settings changes", isOn: $logSettingsChanges)
+                    SettingsToggleRow(
+                        label: "Post login/logout",
+                        isOn: $logLoginLogout,
+                        isDisabled: !isLoggedIn
+                    ) { newValue in
+                        guard checkLoginRequired() else { return }
+                    }
+                    SettingsToggleRow(
+                        label: "Post theme changes",
+                        isOn: $logThemeChanges,
+                        isDisabled: !isLoggedIn
+                    ) { newValue in
+                        guard checkLoginRequired() else { return }
+                    }
+                    SettingsToggleRow(
+                        label: "Post settings changes",
+                        isOn: $logSettingsChanges,
+                        isDisabled: !isLoggedIn
+                    ) { newValue in
+                        guard checkLoginRequired() else { return }
+                    }
                 }
                 
                 // Send test post button at the bottom
                 Button("Send test post") {
+                    guard checkLoginRequired() else { return }
                     Task {
                         await webhookManager.logTestPost()
                     }
@@ -316,13 +402,14 @@ struct SettingsView: View {
             ForEach(tcf.availableThemes) { theme in
                 HStack {
                     Button {
+                        guard checkLoginRequired() else { return }
                         Task {
                             await changeTheme(to: theme.id)
                         }
                     } label: {
                         HStack {
                             Text(theme.name)
-                                .foregroundColor(textColor)
+                                .foregroundColor(isLoggedIn ? textColor : textColor.opacity(0.5))
                             Spacer()
                             if tcf.selectedThemeId == theme.id {
                                 Image(systemName: "checkmark.circle.fill")
@@ -331,11 +418,14 @@ struct SettingsView: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .disabled(!isLoggedIn)
+                    .opacity(isLoggedIn ? 1.0 : 0.6)
                     
                     // Built-in Themes (default, light, dark) können nicht gelöscht werden
                     let builtInThemeIds = ["default", "light", "dark"]
-                    if !builtInThemeIds.contains(theme.id) {
+                    if !builtInThemeIds.contains(theme.id) && isLoggedIn {
                         Button {
+                            guard checkLoginRequired() else { return }
                             themeToDelete = theme
                             showDeleteConfirmation = true
                         } label: {
@@ -350,9 +440,12 @@ struct SettingsView: View {
             }
 
             Button("Upload theme") {
+                guard checkLoginRequired() else { return }
                 showingImporter = true
             }
             .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: tcf.colors.background))
+            .disabled(!isLoggedIn)
+            .opacity(isLoggedIn ? 1.0 : 0.6)
         }
         .padding(20)
         .liquidGlassCard()
@@ -371,13 +464,29 @@ struct SettingsView: View {
             }
             
             // Performance Settings
-            SettingsToggleRow(label: "Enable Animations", isOn: $animationsEnabled)
+            SettingsToggleRow(
+                label: "Enable Animations",
+                isOn: $animationsEnabled,
+                isDisabled: !isLoggedIn
+            ) { newValue in
+                guard checkLoginRequired() else { return }
+            }
             
             // Developer Information Button
             Button("Show Developer Information") {
                 showDeveloperInfo = true
             }
-            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: tcf.colors.background))
+            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .black))
+            .disabled(!isLoggedIn)
+            .opacity(isLoggedIn ? 1.0 : 0.6)
+            
+            // Send Test Notification Button
+            Button("Send Test Notification") {
+                triggerTestNotification()
+            }
+            .buttonStyle(PrimaryButtonStyle(backgroundColor: tcf.colors.accent, foregroundColor: .black))
+            .disabled(!isLoggedIn)
+            .opacity(isLoggedIn ? 1.0 : 0.6)
         }
         .padding(20)
         .liquidGlassCard()
@@ -513,6 +622,8 @@ struct SettingsView: View {
             conditionalWithAnimation(.easeInOut(duration: 0.4)) {
                 tcf.selectedThemeId = themeId
                 tcf.objectWillChange.send() // Force UI update
+                // Mark that user has manually set a theme
+                UserDefaults.standard.set(true, forKey: "themeWasSetByUser")
             }
         }
         
@@ -835,26 +946,31 @@ extension SettingsView {
 private struct SettingsToggleRow: View {
     let label: String
     @Binding var isOn: Bool
+    var isDisabled: Bool = false
     var onChanged: ((Bool) -> Void)? = nil
     @EnvironmentObject var tcf: TCF
 
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(tcf.colors.text)
+                .foregroundColor(isDisabled ? tcf.colors.text.opacity(0.5) : tcf.colors.text)
             Spacer()
             Toggle("", isOn: Binding(
                 get: { isOn },
                 set: { newValue in
-                    isOn = newValue
-                    onChanged?(newValue)
+                    if !isDisabled {
+                        isOn = newValue
+                        onChanged?(newValue)
+                    }
                 }
             ))
             .labelsHidden()
             .tint(tcf.colors.accent)
+            .disabled(isDisabled)
         }
         .padding(16)
         .liquidGlassBackground(cornerRadius: 12)
+        .opacity(isDisabled ? 0.6 : 1.0)
     }
 }
 

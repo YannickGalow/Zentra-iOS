@@ -10,14 +10,19 @@ struct LoginView: View {
     @AppStorage("rememberLogin") var rememberLogin: Bool = false
     @AppStorage("useBiometrics") var useBiometrics: Bool = false
     @AppStorage("currentUsername") var currentUsername: String = ""
+    @AppStorage("authToken") var authToken: String = ""  // Store authentication token
 
     @State private var showPassword = false
     @State private var showError = false
+    @State private var errorMessage = "Wrong username or password"
+    @State private var errorCode: String? = nil
+    @State private var isLoading = false
 
     @State private var showSavePasswordPrompt = false
 
     @EnvironmentObject var tcf: TCF
-
+    
+    private let serverManager = ServerManager.shared
     private let keychainService = "com.example.LoginApp"
 
     var body: some View {
@@ -112,7 +117,7 @@ struct LoginView: View {
                                 }
                             }
                             .submitLabel(.done)
-                            .onSubmit { performLogin() }
+                            .onSubmit { Task { await performLogin() } }
                             .frame(maxWidth: .infinity)
                             .accentColor(tcf.colors.accent)
 
@@ -196,35 +201,84 @@ struct LoginView: View {
                     .padding(.top, 4)
 
                     if showError {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(tcf.colors.error)
-                            Text("Wrong username or password")
-                                .foregroundColor(tcf.colors.error)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(tcf.colors.error)
+                                Text(errorMessage)
+                                    .foregroundColor(tcf.colors.error)
+                            }
+                            .font(.subheadline)
+                            
+                            if let code = errorCode {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 4) {
+                                        Text("Fehlercode:")
+                                            .foregroundColor(tcf.colors.error.opacity(0.8))
+                                        Text(code)
+                                            .foregroundColor(tcf.colors.error)
+                                            .font(.system(.subheadline, design: .monospaced))
+                                            .fontWeight(.semibold)
+                                    }
+                                    .font(.caption)
+                                    
+                                    // Extract and display HTTP status code if available
+                                    if code.contains("HTTP"), let httpCode = extractHTTPCodeFromErrorCode(code) {
+                                        HStack(spacing: 4) {
+                                            Text("HTTP Status:")
+                                                .foregroundColor(tcf.colors.error.opacity(0.8))
+                                            Text("\(httpCode)")
+                                                .foregroundColor(tcf.colors.error)
+                                                .font(.system(.caption, design: .monospaced))
+                                                .fontWeight(.semibold)
+                                        }
+                                        .font(.caption2)
+                                    }
+                                }
+                            }
                         }
-                        .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(tcf.colors.error.opacity(0.15))
                         )
                         .padding(.top, 8)
                     }
+                    
+                    if isLoading {
+                        HStack {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: tcf.colors.accent))
+                            Text("Authenticating...")
+                                .foregroundColor(tcf.colors.text.opacity(0.7))
+                        }
+                        .font(.subheadline)
+                        .padding(.top, 8)
+                    }
 
                     HStack(spacing: 12) {
                         // Login Button
-                        Button(action: { performLogin() }) {
-                            Text("Login")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
+                        Button(action: { Task { await performLogin() } }) {
+                            HStack {
+                                if isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text("Login")
+                                        .font(.system(size: 17, weight: .semibold))
+                                }
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
                         }
                         .buttonStyle(LoginButtonStyle(
                             backgroundColor: tcf.colors.accent,
                             foregroundColor: .white
                         ))
+                        .disabled(isLoading)
 
                         // Debug Button - Quick Admin Login
                         Button(action: { debugLogin() }) {
@@ -259,19 +313,59 @@ struct LoginView: View {
         }
     }
 
-    func performLogin() {
-        conditionalWithAnimation {
-            if (username == "admin" && password == "1234") || (username == "user" && password == "1234") {
-                showError = false
-                currentUsername = username
-                if rememberLogin {
-                    showSavePasswordPrompt = true
+    func performLogin() async {
+        await MainActor.run {
+            isLoading = true
+            showError = false
+            errorCode = nil
+        }
+        
+        do {
+            // Authenticate with server
+            let authResponse = try await serverManager.login(username: username, password: password)
+            
+            await MainActor.run {
+                if authResponse.success, let token = authResponse.token, let username = authResponse.username {
+                    // Login successful
+                    self.authToken = token
+                    self.currentUsername = username
+                    self.isLoggedIn = true
+                    self.showError = false
+                    self.isLoading = false
+                    
+                    if rememberLogin {
+                        // Save password to keychain
+                        KeychainHelper.shared.save(password, service: keychainService, account: username)
+                        showSavePasswordPrompt = true
+                    } else {
+                        // Don't save password
+                        KeychainHelper.shared.delete(service: keychainService, account: username)
+                        onLogin?()
+                    }
                 } else {
-                    KeychainHelper.shared.delete(service: keychainService, account: username)
-                    onLogin?()
+                    // Login failed (shouldn't happen with proper server, but handle gracefully)
+                    showError = true
+                    errorMessage = authResponse.message
+                    errorCode = generateErrorCode(errorType: "AUTH_FAILED", username: username, httpStatusCode: 401)
+                    isLoading = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        conditionalWithAnimation { showError = false }
+                    }
                 }
-            } else {
+            }
+        } catch {
+            await MainActor.run {
                 showError = true
+                if let serverError = error as? ServerError {
+                    errorMessage = serverError.localizedDescription
+                    let httpStatusCode = extractHTTPStatusCode(from: serverError)
+                    errorCode = generateErrorCode(errorType: "SERVER_ERROR", username: username, httpStatusCode: httpStatusCode)
+                } else {
+                    errorMessage = "Connection error. Please check if the server is running."
+                    errorCode = generateErrorCode(errorType: "CONNECTION_ERROR", username: username, httpStatusCode: nil)
+                }
+                isLoading = false
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     conditionalWithAnimation { showError = false }
@@ -281,13 +375,53 @@ struct LoginView: View {
     }
 
     func debugLogin() {
-        conditionalWithAnimation {
-            username = "admin"
-            password = "1234"
-            showError = false
-            currentUsername = "admin"
-            KeychainHelper.shared.delete(service: keychainService, account: "admin")
-            onLogin?()
+        // Debug login - fill credentials and attempt login
+        username = "admin"
+        password = "1234"
+        Task {
+            await performLogin()
+        }
+    }
+    
+    /// Extract HTTP status code from ServerError
+    private func extractHTTPStatusCode(from error: ServerError) -> Int? {
+        switch error {
+        case .httpError(let code):
+            return code
+        case .authenticationError:
+            return 401
+        case .invalidURL:
+            return nil
+        case .invalidResponse:
+            return nil
+        case .decodingError:
+            return nil
+        }
+    }
+    
+    /// Extract HTTP status code from error code string
+    private func extractHTTPCodeFromErrorCode(_ errorCode: String) -> Int? {
+        // Extract HTTP code from format: DBG-XXXXX-XXXX-HTTPXXX
+        if let httpRange = errorCode.range(of: "HTTP") {
+            let httpCodeString = String(errorCode[httpRange.upperBound...])
+            return Int(httpCodeString)
+        }
+        return nil
+    }
+    
+    /// Generate a unique error code for debugging purposes
+    private func generateErrorCode(errorType: String, username: String, httpStatusCode: Int?) -> String {
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let usernameHash = abs(username.hashValue) % 10000
+        let errorTypeHash = abs(errorType.hashValue) % 1000
+        
+        // Format: DBG-XXXXX-XXXX-HTTPXXX (Debugger-Version-ErrorCode-HTTPStatusCode)
+        // Example: DBG-12345-6789-HTTP404
+        if let statusCode = httpStatusCode {
+            return String(format: "DBG-%05d-%04d-HTTP%d", timestamp % 100000, (usernameHash + errorTypeHash) % 10000, statusCode)
+        } else {
+            // No HTTP status code available (connection error, etc.)
+            return String(format: "DBG-%05d-%04d", timestamp % 100000, (usernameHash + errorTypeHash) % 10000)
         }
     }
 }

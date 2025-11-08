@@ -42,23 +42,31 @@ struct MenuApp: App {
     @State private var selectedPage: String? = nil
     @State private var isUnlocked = false
     @State private var didSendFirstLaunchActivation = UserDefaults.standard.bool(forKey: "didSendFirstLaunchActivation")
+    @AppStorage("hasCompletedSetup") private var hasCompletedSetup: Bool = false
+    @AppStorage("authToken") private var authToken: String = ""
 
     init() {
-        if !rememberLogin {
-            isLoggedIn = false
-        }
+        // Don't reset login status on app start
+        // Login status should persist if token exists
+        // Only reset if explicitly logged out
     }
     var body: some Scene {
         WindowGroup {
             ZStack {
                 if isUnlocked {
-                    VStack {
-                        MainView(selectedPage: $selectedPage)
-                            .environmentObject(discordWebhookManager)
-                            .transition(.identity)
+                    if hasCompletedSetup {
+                        VStack {
+                            MainView(selectedPage: $selectedPage)
+                                .environmentObject(discordWebhookManager)
+                                .transition(.identity)
+                        }
+                        .environmentObject(tcf)
+                        .environmentObject(discordWebhookManager)
+                    } else {
+                        SetupView(hasCompletedSetup: $hasCompletedSetup)
+                            .environmentObject(tcf)
+                            .transition(.opacity)
                     }
-                    .environmentObject(tcf)
-                    .environmentObject(discordWebhookManager)
                 } else {
                     Color.black.opacity(0.9)
                         .ignoresSafeArea()
@@ -106,6 +114,14 @@ struct MenuApp: App {
                 case .background:
                     break
                 case .active:
+                    // Only validate token if user is logged in and has a token
+                    // Don't validate on every app start to avoid unnecessary logouts
+                    if isLoggedIn && !authToken.isEmpty {
+                        // Validate in background, but don't block UI
+                        Task.detached(priority: .background) {
+                            await validateTokenAndLogoutIfNeeded()
+                        }
+                    }
                     break
                 default:
                     break
@@ -142,6 +158,55 @@ struct MenuApp: App {
         } else {
             print("⚠️ Face ID / Code nicht verfügbar: \(error?.localizedDescription ?? "")")
             isUnlocked = true
+        }
+    }
+    
+    /// Validate authentication token and logout if invalid
+    /// Only logs out if server explicitly returns 401 (unauthorized)
+    /// Keeps user logged in if server is offline or unreachable
+    func validateTokenAndLogoutIfNeeded() async {
+        guard !authToken.isEmpty else {
+            // No token, but don't logout - might be intentional
+            return
+        }
+        
+        do {
+            let verification = try await ServerManager.shared.verifyToken(authToken)
+            
+            await MainActor.run {
+                if !verification.valid {
+                    // Server explicitly says token is invalid (401), logout
+                    print("⚠️ Token ungültig (401) - automatischer Logout")
+                    isLoggedIn = false
+                    currentUsername = ""
+                    authToken = ""
+                    UserDefaults.standard.set(false, forKey: "rememberLogin")
+                } else {
+                    print("✅ Token gültig")
+                }
+            }
+        } catch let error as ServerError {
+            // Only logout on explicit authentication errors (401)
+            switch error {
+            case .authenticationError, .httpError(401):
+                // Server explicitly says token is invalid, logout
+                print("⚠️ Token ungültig (401) - automatischer Logout")
+                await MainActor.run {
+                    isLoggedIn = false
+                    currentUsername = ""
+                    authToken = ""
+                    UserDefaults.standard.set(false, forKey: "rememberLogin")
+                }
+            case .httpError(let code):
+                // Other HTTP errors (404, 500, etc.) - keep user logged in
+                print("⚠️ Token-Validierung fehlgeschlagen (HTTP \(code)) - Login bleibt bestehen")
+            default:
+                // Server offline or other errors - keep user logged in (token might still be valid)
+                print("⚠️ Token-Validierung fehlgeschlagen (Server offline?) - Login bleibt bestehen")
+            }
+        } catch {
+            // Network errors, timeouts, etc. - keep user logged in (server might be temporarily offline)
+            print("⚠️ Token-Validierung fehlgeschlagen (Netzwerkfehler?) - Login bleibt bestehen")
         }
     }
 }

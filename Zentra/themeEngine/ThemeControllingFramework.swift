@@ -10,7 +10,7 @@ class ThemeControllingFramework: ObservableObject {
     static let version = "1.0.0"
     
     @Published var availableThemes: [TCFThemeModel] = []
-    @AppStorage("selectedThemeId") var selectedThemeId: String = "default" {
+    @AppStorage("selectedThemeId") var selectedThemeId: String = "light" {
         didSet {
             objectWillChange.send()
         }
@@ -118,9 +118,23 @@ class ThemeControllingFramework: ObservableObject {
                 }
             }
             
-            // Set default theme if never set or invalid
-            if selectedThemeId.isEmpty || loadTheme(withId: selectedThemeId) == nil {
-                selectedThemeId = defaultTheme.id
+            // Set default theme if never set or invalid based on system appearance
+            // Check if theme was already set by user (not default "light")
+            let themeWasSetByUser = UserDefaults.standard.bool(forKey: "themeWasSetByUser")
+            
+            if (!themeWasSetByUser && (selectedThemeId.isEmpty || selectedThemeId == "light" || loadTheme(withId: selectedThemeId) == nil)) {
+                // Check system appearance mode using main screen trait collection
+                let systemAppearance = UIScreen.main.traitCollection.userInterfaceStyle
+                if systemAppearance == .dark {
+                    selectedThemeId = darkTheme.id  // Use dark theme for dark mode
+                } else {
+                    selectedThemeId = lightTheme.id  // Use light theme for light mode
+                }
+                // Mark that we've set the initial theme based on system settings
+                UserDefaults.standard.set(true, forKey: "themeWasSetByUser")
+            } else if selectedThemeId.isEmpty || loadTheme(withId: selectedThemeId) == nil {
+                // Fallback if theme is invalid
+                selectedThemeId = lightTheme.id
             }
             
         } catch {

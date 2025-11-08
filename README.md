@@ -152,7 +152,7 @@
 - You can use the app without logging in
 - To access login-protected features, log in via the side menu
 
-**2. Navigation**
+**3. Navigation**
 - Swipe from the **left edge** of the screen to open the menu
 - Or tap the **menu icon** (☰) in the top-left corner
 - Navigate between:
@@ -161,7 +161,7 @@
   - 💰 **Bazaar Profit** - *Currently disabled*
   - ⚙️ **Settings** - Configure app preferences
 
-**3. Login** (Optional)
+**4. Login** (Optional)
 - Open the side menu
 - Tap **"Login"** in the Profile section
 - Or tap "Login" on the Dashboard if not logged in
