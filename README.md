@@ -139,6 +139,23 @@ Themes use the `.gtheme` file format, which supports:
 
 ---
 
+#### 🌐 Server Connection
+
+**Important:** Zentra requires a backend server to function properly. The app connects to a server for:
+
+- 🔐 **Authentication** - User login and registration
+- 💾 **Data Synchronization** - Account and user data management
+- 📊 **Feature Support** - Various app features depend on server connectivity
+
+**Note:** Server connection details are configured automatically and are not user-configurable. The app handles all server communication securely in the background.
+
+**Connection Status:**
+- The app will display connection status when server is unavailable
+- Some features may be limited when offline
+- Login and registration require server connectivity
+
+---
+
 ### Getting Started
 
 #### 🚀 First Launch
@@ -257,6 +274,7 @@ After setup:
 **Privacy:**
 - 🔒 **Secure Browsing** - Disable "Trust links from unknown sources" for enhanced security
 - 💾 **Local Storage** - All data stored locally on your device
+- 🌐 **Server Communication** - Secure connection to backend server for authentication and data management
 
 ---
 
@@ -302,10 +320,24 @@ After setup:
 
 **Solutions:**
 - Login is optional - app works without authentication for basic features
+- **Server Connection Required** - Login requires backend server connectivity
 - Ensure "Remember login" is enabled for persistence
 - Check Face ID/Touch ID settings if using biometrics
 - Verify credentials are correct
+- Check server connection status in the app
 - Try logging out and logging back in
+
+</details>
+
+<details>
+<summary><b>Server connection issues</b></summary>
+
+**Troubleshooting:**
+- Check internet connectivity
+- Verify server is online and accessible
+- Some features may be limited when server is unavailable
+- The app will display connection status when server is unreachable
+- Login and registration require server connectivity
 
 </details>
 
@@ -330,6 +362,8 @@ After setup:
 - 🚫 **No Telemetry** - App doesn't collect personal data or usage statistics
 - 📡 **Offline Support** - Core features work without internet connection
 - 🔒 **Discord Integration** - Only sends data you explicitly enable
+- 🌐 **Secure Server Communication** - All server communication is encrypted and secure
+- 🔐 **Server Authentication** - Secure token-based authentication with backend server
 
 **Security Features:**
 - Biometric authentication support
@@ -566,10 +600,17 @@ Button("Action") {
 **Current Implementation:**
 - App starts without requiring login (after setup)
 - Login is optional but required for certain features
+- **Server-based authentication** - Requires backend server connection
 - Credentials stored securely in iOS Keychain
-- Session management via `@AppStorage`
+- Session management via `@AppStorage` and server tokens
 - Biometric authentication support (Face ID / Touch ID)
 - **Logout warning** - Users informed about settings reset on logout
+
+**Server Integration:**
+- Authentication requests are handled through `ServerManager`
+- Secure token-based session management
+- Automatic token refresh and validation
+- Graceful handling of server unavailability
 
 **Security Implementation:**
 ```swift
@@ -791,11 +832,13 @@ struct MyView: View {
 - [ ] Navigation between pages functions properly
 
 **Authentication:**
-- [ ] Login flow works correctly
-- [ ] Registration flow works correctly
+- [ ] Login flow works correctly (requires server connection)
+- [ ] Registration flow works correctly (requires server connection)
 - [ ] Logout warning displays correctly
 - [ ] Biometric authentication works
 - [ ] Remember login persists after app restart
+- [ ] Server connection status displays correctly
+- [ ] Graceful handling when server is unavailable
 
 **Settings:**
 - [ ] Settings are disabled when not logged in
