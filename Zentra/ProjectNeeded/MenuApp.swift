@@ -38,7 +38,6 @@ struct MenuApp: App {
     @UIApplicationDelegateAdaptor(PushNotificationDelegate.self) var pushDelegate
     
     @StateObject var tcf = TCF()
-    @StateObject var discordWebhookManager = DiscordWebhookManager()
 
     @State private var selectedPage: String? = nil
     @State private var isUnlocked = false
@@ -74,11 +73,9 @@ struct MenuApp: App {
                     if hasCompletedSetup {
                         VStack {
                             MainView(selectedPage: $selectedPage)
-                                .environmentObject(discordWebhookManager)
                                 .transition(.identity)
                         }
                         .environmentObject(tcf)
-                        .environmentObject(discordWebhookManager)
                     } else {
                         SetupView(hasCompletedSetup: $hasCompletedSetup)
                             .environmentObject(tcf)
@@ -101,7 +98,6 @@ struct MenuApp: App {
                 }
             }
             .environmentObject(tcf)
-            .environmentObject(discordWebhookManager)
             .onAppear {
                 authenticateIfNeeded()
 
@@ -177,11 +173,9 @@ struct MenuApp: App {
                             print("❌ Fehler bei Aktivierung: \(error.localizedDescription)")
                             print("❌ Fehler-Details: \(error)")
                             print("✅ UUID wurde trotzdem gespeichert: \(deviceUUID)")
-                            // Mark as sent anyway - UUID is saved and that's what matters
-                            await MainActor.run {
-                                UserDefaults.standard.set(true, forKey: "didSendFirstLaunchActivation")
-                                didSendFirstLaunchActivation = true
-                            }
+                            // Don't mark as sent if there was an error - retry on next app launch
+                            // Only mark as sent if we got a response (even if Discord failed)
+                            print("⚠️ Aktivierung wird beim nächsten App-Start erneut versucht")
                         }
                     }
                 }

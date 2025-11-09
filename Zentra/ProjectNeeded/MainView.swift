@@ -45,11 +45,10 @@ struct MainView: View {
                             } else {
                                 // Login Required Message - shown when not logged in
                                 VStack(alignment: .center, spacing: 24) {
-                                    Spacer(minLength: 100)
-                                    
                                     LoginRequiredCard(showLoginView: $showLoginView)
                                         .environmentObject(tcf)
                                         .padding(.horizontal, 24)
+                                        .padding(.top, 100) // Space for header (60) + some padding
                                     
                                     Spacer()
                                 }
@@ -581,16 +580,6 @@ struct LoginRequiredCard: View {
                 
                 HStack(spacing: 20) {
                     SupportButton(
-                        icon: "message.fill",
-                        label: "Discord",
-                        color: Color(red: 0.4, green: 0.5, blue: 0.9)
-                    ) {
-                        if let url = URL(string: "https://discord.gg/qqdjXgcDh9") {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                    
-                    SupportButton(
                         icon: "questionmark.circle.fill",
                         label: "Support",
                         color: tcf.colors.accent
@@ -605,7 +594,34 @@ struct LoginRequiredCard: View {
             .padding(.top, 8)
         }
         .padding(36)
-        .liquidGlassCard()
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .opacity(0.7)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.3),
+                            .white.opacity(0.1)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 24,
+                bottomTrailingRadius: 24,
+                topTrailingRadius: 0
+            )
+        )
+        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
     }
 }
 

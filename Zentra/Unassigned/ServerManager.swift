@@ -6,14 +6,8 @@ class ServerManager: ObservableObject {
     
     // Server configuration
     var serverURL: String {
-        // For simulator: use localhost
-        // For physical device: use your Mac's local IP (e.g., "http://192.168.0.234:8080")
-        #if targetEnvironment(simulator)
-        return "http://localhost:8080"
-        #else
-        // Change this to your Mac's local IP address for physical device testing
-        return "http://192.168.0.234:8080"
-        #endif
+        // Cloudflare Tunnel URL
+        return "https://api.zentra-apps.com"
     }
     
     private init() {}
@@ -378,6 +372,78 @@ class ServerManager: ObservableObject {
             throw ServerError.invalidResponse
         }
     }
+    
+    /// Get all accounts for a specific device UUID
+    func getAccountsByUUID(deviceUUID: String) async throws -> AccountsByUUIDResponse {
+        guard let url = URL(string: "\(serverURL)/api/accounts/by-uuid?uuid=\(deviceUUID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(AccountsByUUIDResponse.self, from: data)
+            } else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
+    
+    /// Get user number for a specific device UUID
+    func getUserNumber(deviceUUID: String) async throws -> UserNumberResponse {
+        guard let url = URL(string: "\(serverURL)/api/user-number?uuid=\(deviceUUID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") else {
+            throw ServerError.invalidURL
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5.0
+        config.timeoutIntervalForResource = 10.0
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            
+            if httpResponse.statusCode == 200 {
+                return try decoder.decode(UserNumberResponse.self, from: data)
+            } else {
+                throw ServerError.httpError(httpResponse.statusCode)
+            }
+        } catch let error as ServerError {
+            throw error
+        } catch {
+            throw ServerError.invalidResponse
+        }
+    }
 }
 
 // MARK: - Data Models
@@ -408,6 +474,28 @@ struct RegistrationLimitResponse: Codable {
     let account_count: Int
     let remaining_registrations: Int
     let max_accounts: Int
+}
+
+struct AccountsByUUIDResponse: Codable {
+    let success: Bool
+    let device_uuid: String
+    let account_count: Int
+    let accounts: [AccountInfo]
+    let message: String?
+}
+
+struct AccountInfo: Codable {
+    let username: String
+    let email: String
+    let device_uuid: String
+    let created_at: String
+}
+
+struct UserNumberResponse: Codable {
+    let success: Bool
+    let device_uuid: String
+    let user_number: Int?
+    let message: String?
 }
 
 struct ServerStats: Codable {

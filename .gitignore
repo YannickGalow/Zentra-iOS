@@ -102,4 +102,15 @@ SSH_CONNECTION_GUIDE.md
 setup_ssh_key.sh
 server.py
 build.log
+test_discord_embed.py
+accounts.json
+accounts.json.backup
+requirements.txt
+REDIS_SETUP.md
+REDIS_ACCESS.md
 .gitignore
+start_redis_web.sh
+redis_web.py
+accounts.json
+redis_start.sh
+redis_stop.sh

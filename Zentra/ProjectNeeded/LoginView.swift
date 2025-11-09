@@ -22,6 +22,8 @@ struct LoginView: View {
     @State private var showSavePasswordPrompt = false
     @State private var registrationLimitReached = false
     @State private var isCheckingLimit = false
+    @State private var isServerOnline = true
+    @State private var isCheckingServerStatus = false
 
     @EnvironmentObject var tcf: TCF
 
@@ -47,6 +49,33 @@ struct LoginView: View {
                             .foregroundColor(tcf.colors.text)
                     }
                     .padding(.bottom, 8)
+                    
+                    // Server Status Warning
+                    if !isServerOnline {
+                        VStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(tcf.colors.error.opacity(0.8))
+                                Text("Server offline")
+                                    .foregroundColor(tcf.colors.text.opacity(0.8))
+                                    .fontWeight(.semibold)
+                            }
+                            .font(.caption)
+                            
+                            Text("Der Server ist nicht erreichbar. Bitte versuche es später erneut.")
+                                .font(.caption2)
+                                .foregroundColor(tcf.colors.text.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(tcf.colors.error.opacity(0.15))
+                        )
+                        .padding(.bottom, 8)
+                    }
 
                     VStack(spacing: 16) {
                         TextField("Username", text: $username)
@@ -55,6 +84,13 @@ struct LoginView: View {
                             .disableAutocorrection(true)
                             .frame(height: 50)
                             .padding(.horizontal, 16)
+                            .disabled(!isServerOnline)
+                            .onTapGesture {
+                                if !isServerOnline {
+                                    let generator = UINotificationFeedbackGenerator()
+                                    generator.notificationOccurred(.warning)
+                                }
+                            }
                             .background(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 16)
@@ -90,6 +126,7 @@ struct LoginView: View {
                             .foregroundColor(.white.opacity(0.95))
                             .accentColor(tcf.colors.accent)
                             .submitLabel(.next)
+                            .opacity(isServerOnline ? 1.0 : 0.5)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
                                     .stroke(
@@ -107,6 +144,7 @@ struct LoginView: View {
                             )
                             .shadow(color: tcf.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                            .allowsHitTesting(isServerOnline)
 
                         HStack(spacing: 12) {
                             Group {
@@ -121,11 +159,32 @@ struct LoginView: View {
                                 }
                             }
                             .submitLabel(.done)
-                            .onSubmit { Task { await performLogin() } }
+                            .onSubmit { 
+                                if isServerOnline {
+                                    Task { await performLogin() }
+                                } else {
+                                    let generator = UINotificationFeedbackGenerator()
+                                    generator.notificationOccurred(.warning)
+                                }
+                            }
                             .frame(maxWidth: .infinity)
                             .accentColor(tcf.colors.accent)
+                            .disabled(!isServerOnline)
+                            .onTapGesture {
+                                if !isServerOnline {
+                                    let generator = UINotificationFeedbackGenerator()
+                                    generator.notificationOccurred(.warning)
+                                }
+                            }
 
-                            Button(action: { showPassword.toggle() }) {
+                            Button(action: {
+                                if !isServerOnline {
+                                    let generator = UINotificationFeedbackGenerator()
+                                    generator.notificationOccurred(.warning)
+                                } else {
+                                    showPassword.toggle()
+                                }
+                            }) {
                                 Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                                     .foregroundColor(tcf.colors.accent)
                                     .padding(8)
@@ -136,6 +195,8 @@ struct LoginView: View {
                                     )
                             }
                             .frame(width: 36, height: 36)
+                            .disabled(!isServerOnline)
+                            .opacity(isServerOnline ? 1.0 : 0.5)
                         }
                         .padding(.horizontal, 16)
                         .frame(height: 50)
@@ -188,6 +249,7 @@ struct LoginView: View {
                         )
                         .shadow(color: tcf.colors.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                         .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                        .allowsHitTesting(isServerOnline)
                     }
 
                     VStack(spacing: 12) {
@@ -282,13 +344,14 @@ struct LoginView: View {
                             backgroundColor: tcf.colors.accent,
                             foregroundColor: .white
                         ))
-                        .disabled(isLoading)
+                        .disabled(isLoading || !isServerOnline)
+                        .opacity(isServerOnline ? 1.0 : 0.5)
 
                     }
                     .padding(.top, 8)
 
-                    // Register Link (only show if limit not reached)
-                    if !registrationLimitReached {
+                    // Register Link (only show if limit not reached and server is online)
+                    if !registrationLimitReached && isServerOnline {
                         HStack {
                             Text("Don't have an account?")
                                 .foregroundColor(tcf.colors.text.opacity(0.7))
@@ -300,7 +363,7 @@ struct LoginView: View {
                         }
                         .font(.subheadline)
                         .padding(.top, 8)
-                    } else {
+                    } else if registrationLimitReached {
                         VStack(spacing: 8) {
                             HStack(spacing: 6) {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -344,7 +407,22 @@ struct LoginView: View {
                     .environmentObject(tcf)
             }
             .task {
+                await checkServerStatus()
                 await checkRegistrationLimit()
+                
+                // Check server status every 5 seconds
+                Task {
+                    while !Task.isCancelled {
+                        try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                        await checkServerStatus()
+                    }
+                }
+                
+                // Check registration limit every 10 seconds
+                while !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+                    await checkRegistrationLimit()
+                }
             }
             .alert(isPresented: $showSavePasswordPrompt) {
                 Alert(
@@ -496,6 +574,22 @@ struct LoginView: View {
             // On error, allow registration attempt (server will reject if limit reached)
             await MainActor.run {
                 registrationLimitReached = false
+            }
+        }
+    }
+    
+    private func checkServerStatus() async {
+        isCheckingServerStatus = true
+        defer { isCheckingServerStatus = false }
+        
+        do {
+            let status = try await serverManager.fetchServerStatus()
+            await MainActor.run {
+                isServerOnline = status.online
+            }
+        } catch {
+            await MainActor.run {
+                isServerOnline = false
             }
         }
     }

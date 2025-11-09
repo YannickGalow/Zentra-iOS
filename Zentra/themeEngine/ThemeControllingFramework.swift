@@ -320,10 +320,6 @@ class ThemeControllingFramework: ObservableObject {
         
         loadThemes() // Refresh available themes
     }
-    
-    private func sendDiscordWidgetMessage(themeName: String, isSetupMessage: Bool = false) {
-        // Discord integration code here (keeping existing implementation)
-    }
 }
 
 

@@ -12,7 +12,7 @@ struct SetupView: View {
     @AppStorage("deviceUUID") private var deviceUUID: String = ""
     @EnvironmentObject var tcf: TCF
     
-    private let totalPages = 4
+    private let totalPages = 3
     private let serverManager = ServerManager.shared
     
     var body: some View {
@@ -36,13 +36,9 @@ struct SetupView: View {
                     )
                         .tag(1)
                     
-                    // Page 3: Support Discord
-                    SetupPage3()
-                        .tag(2)
-                    
-                    // Page 4: Spaß mit der App haben
+                    // Page 3: Spaß mit der App haben
                     SetupPage4(hasCompletedSetup: $hasCompletedSetup)
-                        .tag(3)
+                        .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -382,92 +378,6 @@ struct SetupPage2: View {
                         .foregroundColor(tcf.colors.text.opacity(0.6))
                         .padding(.top, 8)
                 }
-                
-                Spacer().frame(height: 40)
-            }
-        }
-    }
-}
-
-// MARK: - Setup Page 3: Support Discord
-
-struct SetupPage3: View {
-    @EnvironmentObject var tcf: TCF
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                Spacer().frame(height: 60)
-                
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.3),
-                                    Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.1),
-                                    .clear
-                                ],
-                                center: .center,
-                                startRadius: 30,
-                                endRadius: 80
-                            )
-                        )
-                        .frame(width: 160, height: 160)
-                    
-                    Image(systemName: "message.fill")
-                        .font(.system(size: 70, weight: .medium))
-                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
-                }
-                
-                VStack(spacing: 20) {
-                    Text("Support & Community")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(tcf.colors.text)
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Tritt unserer Discord-Community bei für Support, Updates und mehr!")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(tcf.colors.text.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                }
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    BenefitRow(
-                        icon: "headphones",
-                        text: "Schneller Support bei Fragen"
-                    )
-                    
-                    BenefitRow(
-                        icon: "megaphone.fill",
-                        text: "Erhalte Updates und Neuigkeiten"
-                    )
-                    
-                    BenefitRow(
-                        icon: "person.3.fill",
-                        text: "Tausche dich mit anderen Nutzern aus"
-                    )
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                
-                VStack(spacing: 12) {
-                    Text("Discord Server")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(tcf.colors.text.opacity(0.7))
-                    
-                    Text("discord.gg/qqdjXgcDh9")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
-                }
-                .frame(maxWidth: .infinity)
-                .liquidGlassCard()
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
                 
                 Spacer().frame(height: 40)
             }

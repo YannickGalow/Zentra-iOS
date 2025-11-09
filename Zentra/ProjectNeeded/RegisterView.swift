@@ -141,23 +141,6 @@ struct RegisterView: View {
                                 // Support buttons
                                 HStack(spacing: 20) {
                                     Button(action: {
-                                        if let url = URL(string: "https://discord.gg/qqdjXgcDh9") {
-                                            UIApplication.shared.open(url)
-                                        }
-                                    }) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "message.fill")
-                                                .font(.system(size: 16, weight: .semibold))
-                                            Text("Discord")
-                                                .font(.system(size: 16, weight: .semibold))
-                                        }
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 50)
-                                    }
-                                    .buttonStyle(PrimaryButtonStyle(backgroundColor: Color(red: 0.4, green: 0.5, blue: 0.9), foregroundColor: .white))
-                                    
-                                    Button(action: {
                                         if let url = URL(string: "mailto:support@zentra.app") {
                                             UIApplication.shared.open(url)
                                         }
@@ -494,10 +477,19 @@ struct RegisterView: View {
                             )
                             .padding(.top, 8)
                         }
-                    }
 
                     // Register Button
-                    Button(action: { Task { await performRegister() } }) {
+                    Button(action: {
+                        print("🔵 Register Button pressed")
+                        print("   - isLoading: \(isLoading)")
+                        print("   - isFormValid: \(isFormValid)")
+                        print("   - username: \(username)")
+                        print("   - email: \(email)")
+                        print("   - password length: \(password.count)")
+                        Task {
+                            await performRegister()
+                        }
+                    }) {
                         HStack {
                             if isLoading {
                                 ProgressView()
@@ -516,6 +508,7 @@ struct RegisterView: View {
                         foregroundColor: .white
                     ))
                     .disabled(isLoading || !isFormValid)
+                    .opacity((isLoading || !isFormValid) ? 0.6 : 1.0)
 
                     // Login Link
                     HStack {
@@ -529,12 +522,13 @@ struct RegisterView: View {
                     }
                     .font(.subheadline)
                     .padding(.top, 8)
-
+                    }
+                    
                     Spacer().frame(height: 40)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
             .task {
                 if !hasCheckedLimit {
                     await checkRegistrationLimit()
@@ -573,11 +567,13 @@ struct RegisterView: View {
     }
 
     private func performRegister() async {
+        print("🟢 performRegister() called")
         await MainActor.run {
             isLoading = true
             showError = false
             errorCode = nil
         }
+        print("🟢 isLoading set to true")
 
         // Validate form
         guard !username.isEmpty && username.count >= 3 else {
@@ -616,25 +612,33 @@ struct RegisterView: View {
             return
         }
 
-        // Generate or retrieve device UUID - check Keychain first (persists after reinstall)
+        // Retrieve device UUID - should already exist from checkRegistrationLimit()
         let keychainService = "com.zentra.deviceUUID"
         let keychainAccount = "deviceUUID"
         
-        await MainActor.run {
-            // Try to get UUID from Keychain first (survives app reinstall)
-            if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
-                deviceUUID = keychainUUID
-                print("✅ Device UUID aus Keychain geladen (RegisterView): \(deviceUUID)")
-            } else if deviceUUID.isEmpty {
-                // Generate new UUID if not found in Keychain or UserDefaults
-                deviceUUID = UUID().uuidString
-                print("✅ Neue Device UUID generiert (RegisterView): \(deviceUUID)")
+        var finalUUID = deviceUUID
+        
+        // Always check Keychain first (most reliable, persists after reinstall)
+        if let keychainUUID = KeychainHelper.shared.read(service: keychainService, account: keychainAccount), !keychainUUID.isEmpty {
+            finalUUID = keychainUUID
+            print("✅ Device UUID aus Keychain geladen (RegisterView performRegister): \(finalUUID)")
+        } else if finalUUID.isEmpty {
+            // Fallback: check UserDefaults
+            if let defaultsUUID = UserDefaults.standard.string(forKey: "deviceUUID"), !defaultsUUID.isEmpty {
+                finalUUID = defaultsUUID
+                print("✅ Device UUID aus UserDefaults geladen (RegisterView performRegister): \(finalUUID)")
+            } else {
+                // Last resort: generate new UUID (should rarely happen if checkRegistrationLimit was called)
+                finalUUID = UUID().uuidString
+                print("⚠️ Neue Device UUID generiert (RegisterView performRegister): \(finalUUID)")
             }
-            
-            // IMPORTANT: Save UUID to Keychain (persists after app reinstall) AND UserDefaults (for quick access)
-            // Keychain has priority - it survives app deletion/reinstall
-            KeychainHelper.shared.save(deviceUUID, service: keychainService, account: keychainAccount)
-            UserDefaults.standard.set(deviceUUID, forKey: "deviceUUID")
+        }
+        
+        // Ensure UUID is saved to both Keychain and UserDefaults
+        await MainActor.run {
+            deviceUUID = finalUUID
+            KeychainHelper.shared.save(finalUUID, service: keychainService, account: keychainAccount)
+            UserDefaults.standard.set(finalUUID, forKey: "deviceUUID")
             UserDefaults.standard.synchronize()
         }
 
@@ -653,11 +657,17 @@ struct RegisterView: View {
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
 
         do {
+            print("🟢 Calling serverManager.register()...")
+            print("   - Server URL: \(ServerManager.shared.serverURL)")
+            print("   - Username: \(username)")
+            print("   - Email: \(email)")
+            print("   - Device UUID: \(finalUUID)")
+            
             let response = try await serverManager.register(
                 username: username,
                 email: email,
                 password: password,
-                deviceUUID: deviceUUID,
+                deviceUUID: finalUUID,
                 deviceName: deviceName,
                 deviceModel: deviceModel,
                 iosVersion: iosVersion,
@@ -665,7 +675,13 @@ struct RegisterView: View {
                 buildNumber: buildNumber
             )
 
+            print("🟢 Server response received:")
+            print("   - success: \(response.success)")
+            print("   - message: \(response.message ?? "nil")")
+            print("   - token: \(response.token != nil ? "present" : "nil")")
+
             if response.success, let token = response.token {
+                print("✅ Registration successful!")
                 await MainActor.run {
                     self.authToken = token
                     self.currentUsername = username
@@ -675,6 +691,7 @@ struct RegisterView: View {
                     onRegister?()
                 }
             } else {
+                print("❌ Registration failed: \(response.message ?? "Unknown error")")
                 await MainActor.run {
                     showError = true
                     errorMessage = response.message ?? "Registration failed"
@@ -682,6 +699,8 @@ struct RegisterView: View {
                 }
             }
         } catch {
+            print("❌ Registration error: \(error)")
+            print("   - Error type: \(type(of: error))")
             await MainActor.run {
                 showError = true
                 if let serverError = error as? ServerError {
@@ -740,14 +759,20 @@ struct RegisterView: View {
             }
         }
         
-        guard !uuidToCheck.isEmpty else {
-            // No UUID yet, allow registration (will be generated)
-            print("⚠️ [RegisterView] Keine UUID gefunden - Registrierung erlaubt")
+        // If no UUID found, generate and save one BEFORE checking limit
+        if uuidToCheck.isEmpty {
+            uuidToCheck = UUID().uuidString
+            print("✅ [RegisterView] Neue UUID generiert für Limit-Prüfung: \(uuidToCheck)")
+            
+            // IMPORTANT: Save UUID to Keychain (persists after app reinstall) AND UserDefaults (for quick access)
+            KeychainHelper.shared.save(uuidToCheck, service: keychainService, account: keychainAccount)
+            UserDefaults.standard.set(uuidToCheck, forKey: "deviceUUID")
+            UserDefaults.standard.synchronize()
+            
+            // Update the @AppStorage variable
             await MainActor.run {
-                isCheckingLimit = false
-                limitReached = false
+                deviceUUID = uuidToCheck
             }
-            return
         }
         
         print("🔄 [RegisterView] Prüfe Registrierungslimit für UUID: \(uuidToCheck)")

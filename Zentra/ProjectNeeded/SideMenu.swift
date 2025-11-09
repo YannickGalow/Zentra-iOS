@@ -23,7 +23,6 @@ struct Sidebar: View {
     @State private var developerOptionsToastMessage: String = ""
 
     @EnvironmentObject var tcf: TCF
-    @EnvironmentObject var webhookManager: DiscordWebhookManager
 
     private var displayName: String {
         if isLoggedIn {
@@ -57,6 +56,7 @@ struct Sidebar: View {
             )
             .ignoresSafeArea()
             
+            ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     // Profile Hero Section
@@ -278,38 +278,46 @@ struct Sidebar: View {
                         }
                         .padding(.horizontal, 32)
                         .padding(.bottom, 40)
+                        
+                        // Developer Options Toast Notification unter YouTube
+                        if showDeveloperOptionsToast {
+                            HStack(spacing: 12) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                Text(developerOptionsToastMessage)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.ultraThinMaterial)
+                                    .opacity(0.95)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 20)
+                            .id("developerToast")
+                            .onAppear {
+                                // Scroll zum Toast, damit er sichtbar ist
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        proxy.scrollTo("developerToast", anchor: .bottom)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(.top, 20)
-            }
-            
-            // Developer Options Toast Notification
-            if showDeveloperOptionsToast {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text(developerOptionsToastMessage)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
-                            .opacity(0.9)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(tcf.colors.accent.opacity(0.5), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
-                    .padding(.bottom, 40)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showDeveloperOptionsToast)
+            }
             }
         }
         .frame(minWidth: 300)
@@ -353,7 +361,6 @@ struct Sidebar: View {
                             showLoginView = false
                         }
                     }
-                    Task { await webhookManager.logLogin(username: currentUsername) }
                 }
             })
             .environmentObject(tcf)
@@ -425,8 +432,15 @@ struct Sidebar: View {
                 // Reset privacy settings
                 trustUnknownLinks = false
                 
-                // Reset theme to light (white theme)
-                tcf.selectedThemeId = "light"
+                // Reset theme to match system appearance (dark or light)
+                let systemAppearance = UIScreen.main.traitCollection.userInterfaceStyle
+                if systemAppearance == .dark {
+                    tcf.selectedThemeId = "dark"
+                } else {
+                    tcf.selectedThemeId = "light"
+                }
+                // Reset themeWasSetByUser so theme adapts to system changes
+                UserDefaults.standard.set(false, forKey: "themeWasSetByUser")
                 
                 // Reset all other settings
                 UserDefaults.standard.set(false, forKey: "rememberLogin")
@@ -443,9 +457,6 @@ struct Sidebar: View {
                 KeychainHelper.shared.delete(service: "com.example.LoginApp", account: usernameToLog)
                 
                 selectedPage = "start"
-                
-                // Log logout to Discord
-                Task { await webhookManager.logLogout(username: usernameToLog) }
             }
         }
     }
