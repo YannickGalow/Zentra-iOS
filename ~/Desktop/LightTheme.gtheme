@@ -1,0 +1,76 @@
+{
+  "id": "custom-light",
+  "name": "Custom Light Theme",
+  "version": "1.0",
+  "isEncrypted": false,
+  "passwordHash": null,
+  "background": {
+    "hex": "#F5F7FA",
+    "opacity": 1.0,
+    "description": "Light background"
+  },
+  "text": {
+    "hex": "#1A1F3A",
+    "opacity": 0.95,
+    "description": "Dark text for light theme"
+  },
+  "accent": {
+    "hex": "#4A90E2",
+    "opacity": 1.0,
+    "description": "Blue accent"
+  },
+  "icon": {
+    "hex": "#1A1F3A",
+    "opacity": 0.9,
+    "description": "Dark icons"
+  },
+  "buttonBackground": {
+    "hex": "#4A90E2",
+    "opacity": 0.9,
+    "description": "Button background"
+  },
+  "buttonText": {
+    "hex": "#FFFFFF",
+    "opacity": 1.0,
+    "description": "Button text"
+  },
+  "fieldBackground": {
+    "hex": "#FFFFFF",
+    "opacity": 0.8,
+    "description": "Input fields"
+  },
+  "border": {
+    "hex": "#D0D9E8",
+    "opacity": 0.9,
+    "description": "Light borders"
+  },
+  "navbarBackground": {
+    "hex": "#F5F7FA",
+    "opacity": 0.98,
+    "description": "Navbar background"
+  },
+  "navbarText": {
+    "hex": "#1A1F3A",
+    "opacity": 1.0,
+    "description": "Navbar text"
+  },
+  "error": {
+    "hex": "#E74C3C",
+    "opacity": 1.0,
+    "description": "Error color"
+  },
+  "warning": {
+    "hex": "#F39C12",
+    "opacity": 1.0,
+    "description": "Warning color"
+  },
+  "cornerRadius": 12.0,
+  "blurRadius": 15.0,
+  "shadowOpacity": 0.1,
+  "adaptsToDeviceDefaults": true,
+  "deviceDefaultBase": "light"
+}
+
+
+
+

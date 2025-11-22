@@ -1,0 +1,76 @@
+{
+  "id": "sample-theme",
+  "name": "Sample TCF Theme",
+  "version": "1.0",
+  "isEncrypted": false,
+  "passwordHash": null,
+  "background": {
+    "hex": "#1A1F3A",
+    "opacity": 1.0,
+    "description": "Main background color"
+  },
+  "text": {
+    "hex": "#FFFFFF",
+    "opacity": 0.95,
+    "description": "Primary text color"
+  },
+  "accent": {
+    "hex": "#5B8DEF",
+    "opacity": 1.0,
+    "description": "Accent color for highlights and buttons"
+  },
+  "icon": {
+    "hex": "#FFFFFF",
+    "opacity": 0.9,
+    "description": "Icon color"
+  },
+  "buttonBackground": {
+    "hex": "#5B8DEF",
+    "opacity": 0.85,
+    "description": "Button background color"
+  },
+  "buttonText": {
+    "hex": "#FFFFFF",
+    "opacity": 1.0,
+    "description": "Button text color"
+  },
+  "fieldBackground": {
+    "hex": "#2A3F5F",
+    "opacity": 0.6,
+    "description": "Input field background"
+  },
+  "border": {
+    "hex": "#3A4F7F",
+    "opacity": 0.8,
+    "description": "Border color"
+  },
+  "navbarBackground": {
+    "hex": "#1A1F3A",
+    "opacity": 0.95,
+    "description": "Navigation bar background"
+  },
+  "navbarText": {
+    "hex": "#FFFFFF",
+    "opacity": 1.0,
+    "description": "Navigation bar text"
+  },
+  "error": {
+    "hex": "#FF6B6B",
+    "opacity": 1.0,
+    "description": "Error message color"
+  },
+  "warning": {
+    "hex": "#FFD93D",
+    "opacity": 1.0,
+    "description": "Warning message color"
+  },
+  "cornerRadius": 16.0,
+  "blurRadius": 20.0,
+  "shadowOpacity": 0.15,
+  "adaptsToDeviceDefaults": true,
+  "deviceDefaultBase": "dark"
+}
+
+
+
+
