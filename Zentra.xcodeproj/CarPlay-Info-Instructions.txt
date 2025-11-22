@@ -1,0 +1,21 @@
+// Es konnte keine Info.plist-Datei im Projekt gefunden werden. 
+// Bitte die CarPlay-Konfiguration gemäß der Anleitung in der Info.plist hinzufügen.
+
+```xml
+<key>UIApplicationSceneManifest</key>
+<dict>
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <true/>
+    <key>UISceneConfigurations</key>
+    <dict>
+        <key>CPTemplateApplicationSceneSessionRoleApplication</key>
+        <array>
+            <dict>
+                <key>UISceneClassName</key>
+                <string>CPTemplateApplicationScene</string>
+                <key>UISceneDelegateClassName</key>
+                <string>$(PRODUCT_MODULE_NAME).CarPlayManager</string>
+            </dict>
+        </array>
+    </dict>
+</dict>
