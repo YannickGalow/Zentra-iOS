@@ -6,7 +6,6 @@ class ServerManager: ObservableObject {
     
     // Server configuration
     var serverURL: String {
-        // Cloudflare Tunnel URL
         return "https://api.zentra-apps.com"
     }
     

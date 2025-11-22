@@ -114,3 +114,27 @@ redis_web.py
 accounts.json
 redis_start.sh
 redis_stop.sh
+
+# Process ID files
+.website.pid
+*.pid
+.auth_secret.json
+.secret_rotation.json
+.auth_server.pid
+stop_auth_server.sh
+.gitignore
+start_auth_server.sh
+login.html
+start_website.sh
+index.html
+.gitignore
+auth_setup.py
+.gitignore
+auth_server.py
+.gitignore
+account-manager.html
+.gitignore
+build_ipa.sh
+admin.html
+2FA_SETUP.md
+.auth_server.log
